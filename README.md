@@ -31,7 +31,6 @@ Name | Description | Local     | Online |
 [layer](https://github.com/nuxt/starter/tree/layer) | [Nuxt Layer](https://nuxt.com/docs/guide/going-further/layers) Starter with Extends (experimental) | `npm create nuxt@latest -- -t layer` | - |
 [content](https://github.com/nuxt/starter/tree/content) | [Nuxt Content](https://content.nuxt.com) | `npm create nuxt@latest -- -t content` | [Stackblitz](https://stackblitz.com/github/nuxt/starter/tree/content) / [CodeSandbox](https://codesandbox.io/p/github/nuxt/starter/content) |
 [ui](https://github.com/nuxt/starter/tree/ui) | [Nuxt UI](https://ui.nuxt.com) | `npm create nuxt@latest -- -t ui` | [Stackblitz](https://stackblitz.com/github/nuxt/starter/tree/ui) / [CodeSandbox](https://codesandbox.io/p/github/nuxt/starter/ui) |
-[v2-bridge](https://github.com/nuxt/starter/tree/v2-bridge) | [Nuxt 2](https://github.com/nuxt/nuxt/tree/2.x-dev) + [Bridge](https://github.com/nuxt/bridge) | `npm create nuxt@latest -- -t v2-bridge` | [Stackblitz](https://stackblitz.com/github/nuxt/starter/tree/v2-bridge) / [CodeSandbox](https://codesandbox.io/p/github/nuxt/starter/v2-bridge-codesandbox) |
 
 ## Contribution
 
