@@ -24,6 +24,7 @@ $ npm create nuxt@latest my-app -- -t v3
 
 Name | Description | Local     | Online |
 -----|-------------|-----------|--------|
+[v4](https://github.com/nuxt/starter/tree/v4) | [Nuxt 4 (alpha release)](https://nuxt.com/docs/getting-started/upgrade#testing-nuxt-4) | `npm create nuxt@latest -- -t v4` | [Stackblitz](https://stackblitz.com/github/nuxt/starter/tree/v4) / [CodeSandbox](https://codesandbox.io/p/github/nuxt/starter/v4) |
 [v4-compat](https://github.com/nuxt/starter/tree/v4-compat) | [Nuxt 3 with v4 compat](https://nuxt.com/docs/getting-started/upgrade#testing-nuxt-4) | `npm create nuxt@latest -- -t v4-compat` | [Stackblitz](https://stackblitz.com/github/nuxt/starter/tree/v4-compat) / [CodeSandbox](https://codesandbox.io/p/github/nuxt/starter/v4-compat) |
 [v3](https://github.com/nuxt/starter/tree/v3) | [Nuxt 3](https://github.com/nuxt/nuxt) | `npm create nuxt@latest` | [Stackblitz](https://stackblitz.com/github/nuxt/starter/tree/v3-stackblitz) / [CodeSandbox](https://codesandbox.io/p/github/nuxt/starter/v3-codesandbox) |
 [module](https://github.com/nuxt/starter/tree/module) | Nuxt Module with [Module Builder](https://github.com/nuxt/module-builder) | `npm create nuxt@latest -- -t module` | - |
