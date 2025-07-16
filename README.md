@@ -14,19 +14,19 @@ You can use the `create-nuxt` CLI to clone the latest template to an empty direc
 $ npm create nuxt@latest [<dir>] -- [-t,--template=<template>]
 ```
 
-**Example:** Clone `v3` to `my-app` directory:
+**Example:** Clone `v4` to `my-app` directory:
 
 ```sh-session
-$ npm create nuxt@latest my-app -- -t v3
+$ npm create nuxt@latest my-app -- -t v4
 ```
 
 ## Templates
 
 Name | Description | Local     | Online |
 -----|-------------|-----------|--------|
-[v4](https://github.com/nuxt/starter/tree/v4) | [Nuxt 4 (alpha release)](https://nuxt.com/docs/getting-started/upgrade#testing-nuxt-4) | `npm create nuxt@latest -- -t v4` | [Stackblitz](https://stackblitz.com/github/nuxt/starter/tree/v4) / [CodeSandbox](https://codesandbox.io/p/github/nuxt/starter/v4) |
-[v4-compat](https://github.com/nuxt/starter/tree/v4-compat) | [Nuxt 3 with v4 compat](https://nuxt.com/docs/getting-started/upgrade#testing-nuxt-4) | `npm create nuxt@latest -- -t v4-compat` | [Stackblitz](https://stackblitz.com/github/nuxt/starter/tree/v4-compat) / [CodeSandbox](https://codesandbox.io/p/github/nuxt/starter/v4-compat) |
-[v3](https://github.com/nuxt/starter/tree/v3) | [Nuxt 3](https://github.com/nuxt/nuxt) | `npm create nuxt@latest` | [Stackblitz](https://stackblitz.com/github/nuxt/starter/tree/v3-stackblitz) / [CodeSandbox](https://codesandbox.io/p/github/nuxt/starter/v3-codesandbox) |
+[v4](https://github.com/nuxt/starter/tree/v4) | [Nuxt 4](https://nuxt.com/docs/4.x/getting-started/introduction) | `npm create nuxt@latest -- -t v4` | [Stackblitz](https://stackblitz.com/github/nuxt/starter/tree/v4) / [CodeSandbox](https://codesandbox.io/p/github/nuxt/starter/v4) |
+[v4-compat](https://github.com/nuxt/starter/tree/v4-compat) | [Nuxt 3 with v4 compat](https://nuxt.com/docs/3.x/getting-started/upgrade#testing-nuxt-4) | `npm create nuxt@latest -- -t v4-compat` | [Stackblitz](https://stackblitz.com/github/nuxt/starter/tree/v4-compat) / [CodeSandbox](https://codesandbox.io/p/github/nuxt/starter/v4-compat) |
+[v3](https://github.com/nuxt/starter/tree/v3) | [Nuxt 3](https://nuxt.com/docs/3.x/getting-started/introduction) | `npm create nuxt@latest` | [Stackblitz](https://stackblitz.com/github/nuxt/starter/tree/v3-stackblitz) / [CodeSandbox](https://codesandbox.io/p/github/nuxt/starter/v3-codesandbox) |
 [module](https://github.com/nuxt/starter/tree/module) | Nuxt Module with [Module Builder](https://github.com/nuxt/module-builder) | `npm create nuxt@latest -- -t module` | - |
 [module-devtools](https://github.com/nuxt/starter/tree/module-devtools) | Nuxt Module with [Nuxt DevTools](https://github.com/nuxt/devtools) integration | `npm create nuxt@latest -- -t module-devtools` | - |
 [layer](https://github.com/nuxt/starter/tree/layer) | [Nuxt Layer](https://nuxt.com/docs/guide/going-further/layers) Starter with Extends (experimental) | `npm create nuxt@latest -- -t layer` | - |
