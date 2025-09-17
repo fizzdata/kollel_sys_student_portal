@@ -1,5 +1,5 @@
 {
-  "name": "ui-vue",
+  "name": "ui-vue-dashboard",
   "defaultDir": "vue-app",
   "url": "https://ui.nuxt.com",
   "tar": "https://codeload.github.com/nuxt-ui-templates/dashboard-vue/tar.gz/refs/heads/main"
