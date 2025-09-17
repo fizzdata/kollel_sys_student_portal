@@ -24,8 +24,6 @@
     "doc-driven",
     "layer",
     "module-devtools",
-    "module",
-    "ui",
-    "ui3"
+    "module"
   ]
 }
