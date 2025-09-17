@@ -1,7 +1,0 @@
-{
-  "name": "docus",
-  "defaultDir": "docs",
-  "url": "https://docus.dev",
-  "tar": "https://codeload.github.com/nuxtlabs/docus/tar.gz/refs/heads/feat/nuxt-cli",
-  "subdir": "layer"
-}
