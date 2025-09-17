@@ -30,7 +30,7 @@ Name | Description | Local     | Online |
 [module](https://github.com/nuxt/starter/tree/module) | Nuxt Module with [Module Builder](https://github.com/nuxt/module-builder) | `npm create nuxt@latest -- -t module` | - |
 [module-devtools](https://github.com/nuxt/starter/tree/module-devtools) | Nuxt Module with [Nuxt DevTools](https://github.com/nuxt/devtools) integration | `npm create nuxt@latest -- -t module-devtools` | - |
 [content](https://github.com/nuxt/starter/tree/content) | [Nuxt Content](https://content.nuxt.com) | `npm create nuxt@latest -- -t content` | [Stackblitz](https://stackblitz.com/github/nuxt/starter/tree/content) / [CodeSandbox](https://codesandbox.io/p/github/nuxt/starter/content) |
-[ui](https://github.com/nuxt/starter/tree/ui) | [Nuxt UI](https://ui.nuxt.com) | `npm create nuxt@latest -- -t ui` | [Stackblitz](https://stackblitz.com/github/nuxt/starter/tree/ui) / [CodeSandbox](https://codesandbox.io/p/github/nuxt/starter/ui) |
+[ui](https://github.com/nuxt-ui-templates/starter) | [Nuxt UI](https://ui.nuxt.com) | `npm create nuxt@latest -- -t ui` | [Stackblitz](https://stackblitz.com/github/nuxt-ui-templates/starter) / [CodeSandbox](https://codesandbox.io/p/github/nuxt-ui-templates/starter) |
 
 ## Contribution
 
