@@ -1,44 +1,75 @@
-# 🪄 Nuxt Starter Templates
+# Nuxt Minimal Starter
 
-Quickly get started with a minimal Nuxt starter template!
+Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
 
-## Quick start
+## Setup
 
-Head over to [nuxt.new](https://nuxt.new) to get started quickly.
+Make sure to install dependencies:
 
-## Usage
+```bash
+# npm
+npm install
 
-You can use the `create-nuxt` CLI to clone the latest template to an empty directory:
+# pnpm
+pnpm install
 
-```sh-session
-$ npm create nuxt@latest [<dir>] -- [-t,--template=<template>]
+# yarn
+yarn install
+
+# bun
+bun install
 ```
 
-**Example:** Clone `v4` to `my-app` directory:
+## Development Server
 
-```sh-session
-$ npm create nuxt@latest my-app -- -t v4
+Start the development server on `http://localhost:3000`:
+
+```bash
+# npm
+npm run dev
+
+# pnpm
+pnpm dev
+
+# yarn
+yarn dev
+
+# bun
+bun run dev
 ```
 
-## Templates
+## Production
 
-Name | Description | Local     | Online |
------|-------------|-----------|--------|
-[v4](https://github.com/nuxt/starter/tree/v4) | [Nuxt 4](https://nuxt.com/docs/4.x/getting-started/introduction) | `npm create nuxt@latest -- -t v4` | [Stackblitz](https://stackblitz.com/github/nuxt/starter/tree/v4) / [CodeSandbox](https://codesandbox.io/p/github/nuxt/starter/v4) |
-[v4-compat](https://github.com/nuxt/starter/tree/v4-compat) | [Nuxt 3 with v4 compat](https://nuxt.com/docs/3.x/getting-started/upgrade#testing-nuxt-4) | `npm create nuxt@latest -- -t v4-compat` | [Stackblitz](https://stackblitz.com/github/nuxt/starter/tree/v4-compat) / [CodeSandbox](https://codesandbox.io/p/github/nuxt/starter/v4-compat) |
-[v3](https://github.com/nuxt/starter/tree/v3) | [Nuxt 3](https://nuxt.com/docs/3.x/getting-started/introduction) | `npm create nuxt@latest` | [Stackblitz](https://stackblitz.com/github/nuxt/starter/tree/v3-stackblitz) / [CodeSandbox](https://codesandbox.io/p/github/nuxt/starter/v3-codesandbox) |
-[module](https://github.com/nuxt/starter/tree/module) | Nuxt Module with [Module Builder](https://github.com/nuxt/module-builder) | `npm create nuxt@latest -- -t module` | - |
-[module-devtools](https://github.com/nuxt/starter/tree/module-devtools) | Nuxt Module with [Nuxt DevTools](https://github.com/nuxt/devtools) integration | `npm create nuxt@latest -- -t module-devtools` | - |
-[content](https://github.com/nuxt/starter/tree/content) | [Nuxt Content](https://content.nuxt.com) | `npm create nuxt@latest -- -t content` | [Stackblitz](https://stackblitz.com/github/nuxt/starter/tree/content) / [CodeSandbox](https://codesandbox.io/p/github/nuxt/starter/content) |
-[ui](https://github.com/nuxt-ui-templates/starter) | [Nuxt UI](https://ui.nuxt.com) | `npm create nuxt@latest -- -t ui` | [Stackblitz](https://stackblitz.com/github/nuxt-ui-templates/starter) / [CodeSandbox](https://codesandbox.io/p/github/nuxt-ui-templates/starter) |
+Build the application for production:
 
-## Contribution
+```bash
+# npm
+npm run build
 
-Each template is maintained in a branch (see [all branches](https://github.com/nuxt/starter/branches)).
-For improvements, please open a Pull Request to each individual branch.
+# pnpm
+pnpm build
 
-**Note:** Please avoid commiting lock-files such as `yarn.lock` and `package-lock.json` to template branches!
+# yarn
+yarn build
 
-## License
+# bun
+bun run build
+```
 
-[MIT](./LICENSE) - Made with 💚
+Locally preview production build:
+
+```bash
+# npm
+npm run preview
+
+# pnpm
+pnpm preview
+
+# yarn
+yarn preview
+
+# bun
+bun run preview
+```
+
+Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.

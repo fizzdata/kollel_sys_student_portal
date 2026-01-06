@@ -1,7 +1,0 @@
-{
-  "name": "minimal",
-  "description": "Minimal setup for Nuxt 4",
-  "defaultDir": "nuxt-app",
-  "url": "https://nuxt.com",
-  "tar": "https://codeload.github.com/nuxt/starter/tar.gz/refs/heads/v4"
-}
