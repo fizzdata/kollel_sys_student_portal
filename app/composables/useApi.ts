@@ -2,7 +2,7 @@
 export const useApi = () => {
   const config = useRuntimeConfig();
   const baseUrl = config.public.apiBase;
-  const token = useCookie("kollel_sys_token");
+  const token = useCookie("kollel_stundent_token");
 
   return async (url: string, options: any = {}) => {
     try {

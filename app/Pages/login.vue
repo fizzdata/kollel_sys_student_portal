@@ -47,8 +47,6 @@ const onSubmit = async (event) => {
       token.value = response?.token || "";
       student.value = response?.student || null;
 
-      navigateTo("/clocking");
-
       loginResetForm();
       toast.add({
         title: "Success",
@@ -56,6 +54,7 @@ const onSubmit = async (event) => {
         color: "success",
         duration: 2000,
       });
+      navigateTo("/clocking");
     } else {
       toast.add({
         title: "Failed",

@@ -11,9 +11,6 @@ const currentPassshow = ref(false);
 const newPassShow = ref(false);
 const confirmPassShow = ref(false);
 
-const student = useCookie("kollel_student");
-console.log("🚀 ~ student:", student.value);
-
 const updatePasswordSchema = yup.object({
   old_password: yup
     .string()
