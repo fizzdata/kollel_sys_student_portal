@@ -3,7 +3,7 @@
     <h2>Transactions</h2>
 
     <ul>
-      <li v-for="t in transactions" :key="t.id">
+      <li v-for="t in transactions?.transaction" :key="t.id">
         {{ t.date }} — ${{ t.amount }} — {{ t.type }}
       </li>
     </ul>
@@ -11,13 +11,13 @@
 </template>
 
 <script setup>
-definePageMeta({ layout: 'dashboard' })
+definePageMeta({ layout: "sidebar" });
 
-const auth = useAuth()
-const config = useRuntimeConfig()
+const auth = useAuth();
+const config = useRuntimeConfig();
+const api = useApi();
+const transactions = ref({});
 
-const transactions = await $fetch('/transactions', {
-  baseURL: config.public.apiBase,
-  headers: { Authorization: `Bearer ${auth.token}` }
-})
+transactions.value = await api("/student-portal/transactions");
+console.log("🚀 ~ transactions.value:", transactions.value);
 </script>

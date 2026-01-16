@@ -5,6 +5,7 @@
 </template>
 
 <script setup>
-const auth = useAuth()
-definePageMeta({ layout: 'dashboard' })
+const auth = useAuth();
+console.log("🚀 ~ auth:", auth);
+definePageMeta({ layout: "dashboard" });
 </script>
