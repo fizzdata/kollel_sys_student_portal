@@ -10,6 +10,7 @@ const activeTab = ref("0");
 const currentPassshow = ref(false);
 const newPassShow = ref(false);
 const confirmPassShow = ref(false);
+const org_pin = useCookie("kollel_sys_org_pin");
 
 const updatePasswordSchema = yup.object({
   old_password: yup
@@ -50,7 +51,7 @@ const schema = computed(() =>
       .string()
       .matches(/^\+?[0-9]{7,15}$/, "Invalid phone number")
       .required("Phone is required"),
-    org_pin: yup.string().required("Org Pin is required"),
+
     code: confirmCode.value
       ? yup
           .string()
@@ -62,30 +63,43 @@ const schema = computed(() =>
 
 const state = reactive({
   phone: undefined,
-  org_pin: undefined,
 });
 const resetPasswordForm = () => {
   state.phone = undefined;
-  state.org_pin = undefined;
 };
 
 const onSubmit = async (event) => {
   try {
+    if (!org_pin.value) {
+      toast.add({
+        title: "Error",
+        description: "Organization PIN is missing in the URL.",
+        color: "error",
+        duration: 2000,
+      });
+      return;
+    }
+
     isSubmitting.value = true;
 
     const endpoint = confirmCode.value
       ? `/student-portal/password-reset/2`
       : `/student-portal/password-reset/1`;
 
+    const payload = {
+      org_pin: org_pin.value,
+      ...event.data,
+    };
+
     const response = await api(endpoint, {
       method: "POST",
-      body: event.data,
+      body: payload,
     });
 
     if (response?.success) {
       confirmCode.value = true;
       state.phone = event?.data?.phone;
-      state.org_pin = event?.data?.org_pin;
+
       toast.add({
         title: "Success",
         description: response?.message || "Code Sent!",
@@ -93,7 +107,7 @@ const onSubmit = async (event) => {
         duration: 2000,
       });
 
-      navigateTo("/");
+      navigateTo(`/?org_pin=${org_pin.value}`);
     } else {
       toast.add({
         title: "Failed",
@@ -186,16 +200,6 @@ const submitUpdatePassword = async (event) => {
           />
         </UFormField>
 
-        <UFormField label="Org Pin" name="org_pin">
-          <UInput
-            v-model="state.org_pin"
-            placeholder="Enter your org pin"
-            size="lg"
-            class="w-full"
-            type="number"
-            :disabled="confirmCode"
-          />
-        </UFormField>
         <UFormField v-if="confirmCode" label="Confirmation Code" name="code">
           <UInput
             v-model="state.code"

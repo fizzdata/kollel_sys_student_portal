@@ -8,7 +8,8 @@ const currentPassshow = ref(false);
 const newPassshow = ref(false);
 const toast = useToast();
 const isSubmitting = ref(false);
-
+const route = useRoute();
+const org_pin = route.query.org_pin;
 const schema = object({
   current: string()
     .min(8, "Must be at least 8 characters")
@@ -165,7 +166,10 @@ const onSubmit = async (event) => {
       <!-- Footer -->
       <p class="mt-8 text-center text-sm text-gray-500">
         Already have an account?
-        <ULink to="/" class="font-semibold text-primary hover:text-gray-500">
+        <ULink
+          :to="`/?org_pin=${org_pin}`"
+          class="font-semibold text-primary hover:text-gray-500"
+        >
           Login
         </ULink>
       </p>

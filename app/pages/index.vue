@@ -4,9 +4,12 @@ import * as yup from "yup";
 const show = ref(false);
 const toast = useToast();
 const api = useApi();
+const route = useRoute();
 const isSubmitting = ref(false);
 const token = useCookie("kollel_stundent_token");
 const student = useCookie("kollel_student");
+const saveOrgPin = useCookie("kollel_sys_org_pin");
+const org_pin = route?.query?.org_pin ?? saveOrgPin.value;
 
 const schema = yup.object({
   phone: yup
@@ -30,10 +33,19 @@ const loginResetForm = () => {
 
 const onSubmit = async (event) => {
   try {
+    if (!org_pin) {
+      toast.add({
+        title: "Error",
+        description: "Organization PIN is missing in the URL.",
+        color: "error",
+        duration: 2000,
+      });
+      return;
+    }
     isSubmitting.value = true;
 
     const payload = {
-      org_pin: 457076931,
+      org_pin: org_pin,
       ...event.data,
     };
 
@@ -41,11 +53,11 @@ const onSubmit = async (event) => {
       method: "POST",
       body: payload,
     });
-    //getitem, json.parse
 
     if (response?.success) {
       token.value = response?.token || "";
       student.value = response?.student || null;
+      saveOrgPin.value = org_pin;
 
       loginResetForm();
       toast.add({
@@ -90,11 +102,10 @@ const onSubmit = async (event) => {
     <UCard class="w-full max-w-lg rounded-2xl shadow-xl p-6 sm:p-8">
       <!-- Brand -->
       <div class="mb-6 text-center">
-        <ULink to="/">
-          <h2 class="text-3xl font-bold text-primary">
-            Kollel System Student Portal
-          </h2>
-        </ULink>
+        <h2 class="text-3xl font-bold text-primary">
+          Kollel System Student Portal
+        </h2>
+
         <ULink to="http://fizzdata.com/" target="_blank" class="block">
           <p class="mt-1 text-sm text-gray-500">by Fizz Data</p>
         </ULink>
@@ -158,8 +169,8 @@ const onSubmit = async (event) => {
       <p class="mt-8 text-center text-sm text-gray-500">
         <!-- Not an account? -->
         <ULink
-          to="/reset-password"
-          class="font-semibold text-primary hover:text-gray-500"
+          :to="`/reset-password?org_pin=${org_pin}`"
+          class="font-semibold text-primary hover:text-gray-500 underline"
         >
           Reset Password!
         </ULink>

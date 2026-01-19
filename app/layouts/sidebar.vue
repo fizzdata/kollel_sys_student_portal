@@ -18,6 +18,7 @@ const api = useApi();
 
 const token = useCookie("kollel_stundent_token");
 const student = useCookie("kollel_student");
+const org_pin = useCookie("kollel_sys_org_pin");
 console.log("🚀 ~ student:", student.value);
 
 const toast = useToast();
@@ -45,7 +46,7 @@ const logout = async () => {
       });
 
       // Redirect to login
-      navigateTo("/");
+      navigateTo(`/?org_pin=${org_pin.value}`);
       // Clear cookies
       token.value = null;
       student.value = null;

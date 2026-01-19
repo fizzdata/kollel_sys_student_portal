@@ -5,13 +5,15 @@ const confirmCode = ref(false);
 const toast = useToast();
 const api = useApi();
 const isSubmitting = ref(false);
+const saveOrgPin = useCookie("kollel_sys_org_pin");
+const route = useRoute();
+const org_pin = route.query.org_pin ?? saveOrgPin.value;
+
 const state = reactive({
   phone: undefined,
-  org_pin: undefined,
 });
 const resetPasswordForm = () => {
   state.phone = undefined;
-  state.org_pin = undefined;
 };
 const schema = computed(() =>
   yup.object({
@@ -19,8 +21,6 @@ const schema = computed(() =>
       .string()
       .matches(/^\+?[0-9]{7,15}$/, "Invalid phone number")
       .required("Phone is required"),
-
-    org_pin: yup.string().required("Org Pin is required"),
 
     code: confirmCode.value
       ? yup
@@ -32,10 +32,20 @@ const schema = computed(() =>
 );
 const onSubmit = async (event) => {
   try {
+    if (!org_pin) {
+      toast.add({
+        title: "Error",
+        description: "Organization PIN is missing in the URL.",
+        color: "error",
+        duration: 2000,
+      });
+      return;
+    }
+
     isSubmitting.value = true;
 
     const payload = {
-      org_pin: 457076931,
+      org_pin: org_pin,
       ...event.data,
     };
     const endpoint = `/student-portal/password-reset`;
@@ -51,7 +61,6 @@ const onSubmit = async (event) => {
     if (response?.success) {
       confirmCode.value = true;
       state.phone = event?.data?.phone;
-      state.org_pin = event?.data?.org_pin;
       toast.add({
         title: "Success",
         description: response?.message || "Code Sent!",
@@ -59,7 +68,7 @@ const onSubmit = async (event) => {
         duration: 2000,
       });
       resetPasswordForm();
-      navigateTo("/");
+      navigateTo(`/?org_pin=${org_pin}`);
     } else {
       toast.add({
         title: "Failed",
@@ -91,11 +100,10 @@ const onSubmit = async (event) => {
     <UCard class="w-full max-w-lg rounded-2xl shadow-xl p-6 sm:p-8">
       <!-- Brand -->
       <div class="mb-6 text-center">
-        <ULink to="/">
-          <h2 class="text-3xl font-bold text-primary">
-            Kollel System Student Portal
-          </h2>
-        </ULink>
+        <h2 class="text-3xl font-bold text-primary">
+          Kollel System Student Portal
+        </h2>
+
         <ULink to="http://fizzdata.com/" target="_blank" class="block">
           <p class="mt-1 text-sm text-gray-500">by Fizz Data</p>
         </ULink>
@@ -122,15 +130,6 @@ const onSubmit = async (event) => {
           />
         </UFormField>
 
-        <UFormField label="Org Pin" name="org_pin">
-          <UInput
-            v-model="state.org_pin"
-            placeholder="Enter your org pin"
-            size="lg"
-            class="w-full"
-            type="number"
-          />
-        </UFormField>
         <UFormField v-if="confirmCode" label="Confirmation Code" name="code">
           <UInput
             v-model="state.code"
@@ -153,7 +152,10 @@ const onSubmit = async (event) => {
 
       <p class="mt-8 text-center text-sm text-gray-500">
         Already have an account?
-        <ULink to="/" class="font-semibold text-primary hover:text-gray-500">
+        <ULink
+          :to="`/?org_pin=${org_pin}`"
+          class="font-semibold text-primary hover:text-gray-500"
+        >
           Login!
         </ULink>
       </p>
