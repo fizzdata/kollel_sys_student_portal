@@ -15,54 +15,40 @@ import {
 const sidebarOpen = ref(false);
 const route = useRoute();
 const api = useApi();
-const router = useRouter();
-const user = useCookie("kollel_sys_user");
-const hasAccess = useCookie("kollel_sys_has_access");
-const token = useCookie("kollel_sys_token");
+
+const token = useCookie("kollel_stundent_token");
+const student = useCookie("kollel_student");
+console.log("🚀 ~ student:", student.value);
 
 const toast = useToast();
 const navigation = [
-  { name: "Users", href: "/users", key: "users" },
-  { name: "Students", href: "/students", key: "students" },
-  { name: "Schedule", href: "/schedule", key: "schedule" },
-  { name: "Clockings", href: "/clockings", key: "clockings" },
-  { name: "Transaction", href: "/transactions", key: "transactions" },
-  { name: "Payroll", href: "/payroll", key: "payroll" },
-  { name: "Checks", href: "/checks", key: "checks" },
-  { name: "Reports", href: "/reports", key: "reports" },
-  { name: "Setting", href: "/setting", key: "settings" },
-  { name: "College Checks", href: "/college-checks", key: "college-checks" },
+  { name: "Clocking", href: "/clocking", key: "clocking" },
+  { name: "Transaction", href: "/transaction", key: "transaction" },
+  { name: "Settings", href: "/settings", key: "settings" },
 ];
-
-const filteredNavigation = computed(() =>
-  navigation.filter((item) => hasAccess.value.includes(item.key))
-);
 
 const isActive = (href) => route.path.startsWith(href);
 
 const logout = async () => {
-  //return;
   try {
     // Send the full sign-up data to the server
-    const response = await api("/api/logout", {
+    const response = await api("/student-portal/logout", {
       method: "POST",
       body: { token: token.value }, // Send payload in body
     });
+
     if (response?.success) {
       toast.add({
-        description: response?.message || `Admin Logout Successfully`,
+        description: response?.message || `Student Logout Successfully`,
         color: "success",
         timeout: 2000,
       });
-      token.value = null;
 
       // Redirect to login
-      navigateTo("/login");
+      navigateTo("/");
       // Clear cookies
-      useCookie("kollel_sys_token").value = null;
-      useCookie("kollel_sys_org").value = null;
-      useCookie("kollel_sys_user").value = null;
-      useCookie("kollel_sys_has_access").value = null;
+      token.value = null;
+      student.value = null;
     }
 
     if (!response?._data?.success && !response?.success) {
@@ -83,7 +69,7 @@ const logout = async () => {
 };
 
 const userNavigation = [
-  { name: "Setting", href: "/setting" },
+  { name: "Profile", href: "/profile" },
   { name: "Sign out", href: "#", action: logout },
 ];
 </script>
@@ -134,18 +120,18 @@ const userNavigation = [
               </div>
 
               <!-- Brand -->
-              <ULink to="/">
-                <div
-                  class="flex h-16 items-center font-bold text-primary text-xl"
-                >
-                  Kollel System
-                </div>
-              </ULink>
+              <!-- <ULink to="/"> -->
+              <div
+                class="flex h-16 items-center font-bold text-primary text-xl"
+              >
+                Kollel System
+              </div>
+              <!-- </ULink> -->
               <!-- Navigation -->
               <nav class="flex flex-1 flex-col mt-4">
                 <ul class="flex flex-1 flex-col gap-y-3">
                   <!-- Menu Items -->
-                  <li v-for="item in filteredNavigation" :key="item.key">
+                  <li v-for="item in navigation" :key="item.key">
                     <ULink
                       :to="item.href"
                       :class="[
@@ -175,16 +161,16 @@ const userNavigation = [
         class="flex grow flex-col gap-y-5 border-r border-gray-200 bg-white/90 backdrop-blur-md shadow-md px-6 pb-4 rounded-tr-2xl rounded-br-2xl"
       >
         <!-- Brand -->
-        <ULink to="/">
-          <div class="flex h-16 items-center font-bold text-primary text-xl">
-            Kollel System
-          </div>
-        </ULink>
+        <!-- <ULink to="/"> -->
+        <div class="flex h-16 items-center font-bold text-primary text-xl">
+          Kollel System
+        </div>
+        <!-- </ULink> -->
         <!-- Navigation -->
         <nav class="flex flex-1 flex-col">
           <ul class="flex flex-1 flex-col gap-y-4">
             <!-- Menu Items -->
-            <li v-for="item in filteredNavigation" :key="item.key">
+            <li v-for="item in navigation" :key="item.key">
               <ULink
                 :to="item.href"
                 :class="[
@@ -226,10 +212,20 @@ const userNavigation = [
           <template #default="{ open }">
             <MenuButton class="relative flex items-center gap-2">
               <span class="sr-only">Open user menu</span>
-              <UAvatar v-if="user?.name" :alt="user?.name" size="md" />
+              <UAvatar
+                v-if="student"
+                :alt="
+                  student?.first_yiddish_name + ' ' + student?.last_yiddish_name
+                "
+                size="md"
+              />
               <span class="hidden lg:flex lg:items-center gap-1 cursor-pointer">
                 <span class="text-sm font-semibold text-gray-900">
-                  {{ user?.name }}
+                  {{
+                    student?.first_yiddish_name +
+                    " " +
+                    student?.last_yiddish_name
+                  }}
                 </span>
                 <UIcon
                   name="i-lucide-chevron-down"

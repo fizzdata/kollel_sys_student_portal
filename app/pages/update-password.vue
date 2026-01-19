@@ -1,57 +1,53 @@
 <script setup>
-import { object, string, ref as yupRef } from "yup";
+import { object, string } from "yup";
 
 definePageMeta({
-  layout: "default",
-  middleware: "auth",
+  layout: false,
 });
-
-const api = useApi();
+const currentPassshow = ref(false);
+const newPassshow = ref(false);
 const toast = useToast();
 const isSubmitting = ref(false);
 
 const schema = object({
-  current_password: string()
+  current: string()
     .min(8, "Must be at least 8 characters")
-    .required("Current password is required"),
+    .required("Password is required"),
   password: string()
     .min(8, "Must be at least 8 characters")
-    .required("New password is required"),
-  password_confirmation: string()
-    .oneOf([yupRef("password")], "Passwords must match")
-    .required("Password confirmation is required"),
+    .required("Password is required"),
+  confirmed: yup
+    .string()
+    .oneOf([yup.ref("password")], "Passwords must match") // ✅ Remove `null`
+    .required("Confirm Password is required"),
 });
 
 const state = reactive({
-  current_password: undefined,
+  current: undefined,
   password: undefined,
-  password_confirmation: undefined,
 });
-
-const showCurrentPassword = ref(false);
-const showPassword = ref(false);
-const showConfirmPassword = ref(false);
-
-const resetForm = () => {
-  state.current_password = undefined;
+const loginResetForm = () => {
+  state.current = undefined;
   state.password = undefined;
-  state.password_confirmation = undefined;
 };
 
 const onSubmit = async (event) => {
   try {
     isSubmitting.value = true;
 
-    const response = await api("/api/update-password", {
+    const response = await api("/update-password", {
       method: "POST",
       body: event.data,
     });
+    //getitem, json.parse
 
     if (response?.success) {
-      resetForm();
+      navigateTo("/");
+
+      loginResetForm();
       toast.add({
         title: "Success",
-        description: response?.message || "Password updated successfully",
+        description: response?.message || "Password Updated Successfully",
         color: "success",
         duration: 2000,
       });
@@ -59,21 +55,15 @@ const onSubmit = async (event) => {
       toast.add({
         title: "Failed",
         description:
-          response?._data?.errors ||
-          response?._data?.message ||
-          "Failed to update password",
+          response?._data.errors ||
+          response?._data.message ||
+          "Failed to Login",
         color: "error",
         duration: 2000,
       });
     }
   } catch (error) {
-    console.error("Error updating password:", error);
-    toast.add({
-      title: "Error",
-      description: "An error occurred while updating password",
-      color: "error",
-      duration: 2000,
-    });
+    console.error("Error Login:", error);
   } finally {
     isSubmitting.value = false;
   }
@@ -81,118 +71,104 @@ const onSubmit = async (event) => {
 </script>
 
 <template>
-  <div class="container mx-auto px-4 py-8">
-    <div class="max-w-md mx-auto">
-      <UCard class="rounded-2xl shadow-xl p-6 sm:p-8">
-        <!-- Title -->
-        <div class="mb-6">
-          <h1 class="text-2xl font-bold text-gray-800">Update Password</h1>
-          <p class="mt-2 text-sm text-gray-500">
-            Change your account password
-          </p>
-        </div>
-
-        <!-- Form -->
-        <UForm
-          :schema="schema"
-          :state="state"
-          class="space-y-4"
-          @submit="onSubmit"
-        >
-          <!-- Current Password -->
-          <UFormField label="Current Password" name="current_password">
-            <UInput
-              v-model="state.current_password"
-              placeholder="Enter your current password"
-              :type="showCurrentPassword ? 'text' : 'password'"
-              :ui="{ trailing: 'pe-1' }"
-              class="w-full"
-            >
-              <template #trailing>
-                <UButton
-                  color="neutral"
-                  variant="link"
-                  size="sm"
-                  :icon="
-                    showCurrentPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'
-                  "
-                  :aria-label="
-                    showCurrentPassword ? 'Hide password' : 'Show password'
-                  "
-                  @click="showCurrentPassword = !showCurrentPassword"
-                />
-              </template>
-            </UInput>
-          </UFormField>
-
-          <!-- New Password -->
-          <UFormField label="New Password" name="password">
-            <UInput
-              v-model="state.password"
-              placeholder="Enter new password"
-              :type="showPassword ? 'text' : 'password'"
-              :ui="{ trailing: 'pe-1' }"
-              class="w-full"
-            >
-              <template #trailing>
-                <UButton
-                  color="neutral"
-                  variant="link"
-                  size="sm"
-                  :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                  :aria-label="showPassword ? 'Hide password' : 'Show password'"
-                  @click="showPassword = !showPassword"
-                />
-              </template>
-            </UInput>
-          </UFormField>
-
-          <!-- Confirm Password -->
-          <UFormField label="Confirm Password" name="password_confirmation">
-            <UInput
-              v-model="state.password_confirmation"
-              placeholder="Confirm new password"
-              :type="showConfirmPassword ? 'text' : 'password'"
-              :ui="{ trailing: 'pe-1' }"
-              class="w-full"
-            >
-              <template #trailing>
-                <UButton
-                  color="neutral"
-                  variant="link"
-                  size="sm"
-                  :icon="
-                    showConfirmPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'
-                  "
-                  :aria-label="
-                    showConfirmPassword ? 'Hide password' : 'Show password'
-                  "
-                  @click="showConfirmPassword = !showConfirmPassword"
-                />
-              </template>
-            </UInput>
-          </UFormField>
-
-          <!-- Submit Button -->
-          <UButton
-            type="submit"
-            :loading="isSubmitting"
-            :disabled="isSubmitting"
-            block
-            size="lg"
-            class="mt-6"
-          >
-            Update Password
-          </UButton>
-        </UForm>
-
-        <!-- Back Link -->
-        <div class="mt-4 text-center">
-          <ULink to="/dashboard" class="text-sm text-primary hover:underline">
-            Back to Dashboard
-          </ULink>
-        </div>
-      </UCard>
+  <div
+    class="relative flex min-h-screen items-center justify-center bg-gray-50 px-4"
+  >
+    <!-- Animated background blobs (like hero section) -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+      <div
+        class="absolute -top-40 -left-40 w-64 h-64 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-pulse-slow"
+      ></div>
+      <div
+        class="absolute -bottom-40 -right-40 w-64 h-64 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-pulse-slow animation-delay-2000"
+      ></div>
     </div>
+    <UCard class="w-full max-w-lg rounded-2xl shadow-xl p-6 sm:p-8">
+      <!-- Brand -->
+      <div class="mb-6 text-center">
+        <h2 class="text-3xl font-bold text-primary">
+          Kollel System Student Portal
+        </h2>
+      </div>
+
+      <!-- Title -->
+      <p class="my-6 text-center text-lg font-medium text-gray-800">
+        Update your Password
+      </p>
+
+      <!-- Form -->
+      <UForm
+        :schema="schema"
+        :state="state"
+        class="space-y-4"
+        @submit="onSubmit"
+      >
+        <UFormField label="Current Password" name="current">
+          <UInput
+            v-model="state.current"
+            placeholder="Current Password"
+            :type="currentPassshow ? 'text' : 'password'"
+            :ui="{ trailing: 'pe-1' }"
+            class="w-full"
+          >
+            <template #trailing>
+              <UButton
+                color="neutral"
+                variant="link"
+                size="sm"
+                :icon="currentPassshow ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                :aria-label="
+                  currentPassshow ? 'Hide password' : 'Show password'
+                "
+                :aria-pressed="currentPassshow"
+                aria-controls="password"
+                @click="currentPassshow = !currentPassshow"
+              />
+            </template>
+          </UInput>
+        </UFormField>
+
+        <UFormField label="New Password" name="password">
+          <UInput
+            v-model="state.password"
+            placeholder="New Password"
+            :type="newPassshow ? 'text' : 'password'"
+            :ui="{ trailing: 'pe-1' }"
+            class="w-full"
+          >
+            <template #trailing>
+              <UButton
+                color="neutral"
+                variant="link"
+                size="sm"
+                :icon="newPassshow ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                :aria-label="newPassshow ? 'Hide password' : 'Show password'"
+                :aria-pressed="newPassshow"
+                aria-controls="password"
+                @click="newPassshow = !newPassshow"
+              />
+            </template>
+          </UInput>
+        </UFormField>
+
+        <UButton
+          type="submit"
+          :loading="isSubmitting"
+          :disabled="isSubmitting"
+          block
+          size="lg"
+        >
+          Submit
+        </UButton>
+      </UForm>
+
+      <!-- Footer -->
+      <p class="mt-8 text-center text-sm text-gray-500">
+        Already have an account?
+        <ULink to="/" class="font-semibold text-primary hover:text-gray-500">
+          Login
+        </ULink>
+      </p>
+    </UCard>
   </div>
 </template>

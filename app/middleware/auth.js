@@ -1,5 +1,5 @@
-export default defineNuxtRouteMiddleware(() => {
-  const token = useCookie("kollel_sys_token");
+export default defineNuxtRouteMiddleware((to) => {
+  const token = useCookie("kollel_stundent_token");
 
   if (!token.value) {
     return navigateTo("/");

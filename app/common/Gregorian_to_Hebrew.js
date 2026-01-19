@@ -755,3 +755,8 @@ export function getDayOfWeek(date) {
         dayOfWeek
       ];
 }
+
+export function yiddish_date(date) {
+  let array_from = date.split("-");
+  return G2H(array_from[0], array_from[1], array_from[2]);
+}

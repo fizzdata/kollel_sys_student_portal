@@ -1,33 +1,35 @@
 <script setup>
 import * as yup from "yup";
 
-const show = ref(false);
+const confirmCode = ref(false);
 const toast = useToast();
 const api = useApi();
 const isSubmitting = ref(false);
-const token = useCookie("kollel_stundent_token");
-const student = useCookie("kollel_student");
-
-const schema = yup.object({
-  phone: yup
-    .string()
-    .matches(/^\+?[0-9]{7,15}$/, "Invalid phone number")
-    .required("Phone is required"),
-  password: yup
-    .string()
-    .min(1, "Must be at least 8 characters")
-    .required("Password is required"),
-});
-
 const state = reactive({
   phone: undefined,
-  password: undefined,
+  org_pin: undefined,
 });
-const loginResetForm = () => {
+const resetPasswordForm = () => {
   state.phone = undefined;
-  state.password = undefined;
+  state.org_pin = undefined;
 };
+const schema = computed(() =>
+  yup.object({
+    phone: yup
+      .string()
+      .matches(/^\+?[0-9]{7,15}$/, "Invalid phone number")
+      .required("Phone is required"),
 
+    org_pin: yup.string().required("Org Pin is required"),
+
+    code: confirmCode.value
+      ? yup
+          .string()
+          .length(6, "Code must be 6 digits")
+          .required("Verification code is required")
+      : yup.string().notRequired(),
+  }),
+);
 const onSubmit = async (event) => {
   try {
     isSubmitting.value = true;
@@ -36,32 +38,32 @@ const onSubmit = async (event) => {
       org_pin: 457076931,
       ...event.data,
     };
+    const endpoint = `/student-portal/password-reset`;
 
-    const response = await api("/student-portal/login", {
+    console.log("event", event.data);
+
+    const response = await api(endpoint, {
       method: "POST",
       body: payload,
     });
     //getitem, json.parse
 
     if (response?.success) {
-      token.value = response?.token || "";
-      student.value = response?.student || null;
-
-      loginResetForm();
+      confirmCode.value = true;
+      state.phone = event?.data?.phone;
+      state.org_pin = event?.data?.org_pin;
       toast.add({
         title: "Success",
-        description: response?.message || "Login Successfully",
+        description: response?.message || "Code Sent!",
         color: "success",
         duration: 2000,
       });
-      navigateTo("/clocking");
+      resetPasswordForm();
+      navigateTo("/");
     } else {
       toast.add({
         title: "Failed",
-        description:
-          response?._data.errors ||
-          response?._data.message ||
-          "Failed to Login",
+        description: response?.message || "Code Sending Failed",
         color: "error",
         duration: 2000,
       });
@@ -73,7 +75,6 @@ const onSubmit = async (event) => {
   }
 };
 </script>
-
 <template>
   <div
     class="relative flex min-h-screen items-center justify-center bg-gray-50 px-4"
@@ -102,7 +103,7 @@ const onSubmit = async (event) => {
 
       <!-- Title -->
       <p class="my-6 text-center text-lg font-medium text-gray-800">
-        Login to your account
+        Reset your password
       </p>
 
       <!-- Form -->
@@ -121,27 +122,23 @@ const onSubmit = async (event) => {
           />
         </UFormField>
 
-        <UFormField label="Password" name="password">
+        <UFormField label="Org Pin" name="org_pin">
           <UInput
-            v-model="state.password"
-            placeholder="Password"
-            :type="show ? 'text' : 'password'"
-            :ui="{ trailing: 'pe-1' }"
+            v-model="state.org_pin"
+            placeholder="Enter your org pin"
+            size="lg"
             class="w-full"
-          >
-            <template #trailing>
-              <UButton
-                color="neutral"
-                variant="link"
-                size="sm"
-                :icon="show ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                :aria-label="show ? 'Hide password' : 'Show password'"
-                :aria-pressed="show"
-                aria-controls="password"
-                @click="show = !show"
-              />
-            </template>
-          </UInput>
+            type="number"
+          />
+        </UFormField>
+        <UFormField v-if="confirmCode" label="Confirmation Code" name="code">
+          <UInput
+            v-model="state.code"
+            placeholder="Enter your confirmation code"
+            size="lg"
+            class="w-full"
+            type="number"
+          />
         </UFormField>
         <UButton
           type="submit"
@@ -154,14 +151,10 @@ const onSubmit = async (event) => {
         </UButton>
       </UForm>
 
-      <!-- Footer -->
       <p class="mt-8 text-center text-sm text-gray-500">
-        <!-- Not an account? -->
-        <ULink
-          to="/reset-password"
-          class="font-semibold text-primary hover:text-gray-500"
-        >
-          Reset Password!
+        Already have an account?
+        <ULink to="/" class="font-semibold text-primary hover:text-gray-500">
+          Login!
         </ULink>
       </p>
     </UCard>

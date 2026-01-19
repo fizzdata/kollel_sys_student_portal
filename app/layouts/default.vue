@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col min-h-screen">
-    <AppHeader />
+    <!-- <AppHeader /> -->
     <main class="flex-1 relative isolate">
       <slot />
     </main>

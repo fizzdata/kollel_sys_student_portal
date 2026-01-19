@@ -1,4 +1,5 @@
 <script setup>
+import { convertTo24Hour } from "~/common/common";
 import {
   FormatYear,
   G2H,
@@ -13,8 +14,61 @@ const props = defineProps({
   },
 });
 
+const emit = defineEmits(["reload"]);
+
+const editClockingModal = ref(false);
 const weeks = ref([]);
+const isSubmitting = ref(false);
 const today = new Date();
+const api = useApi();
+const toast = useToast();
+const state = reactive({
+  id: null,
+  day: null,
+  session: null,
+  session_id: null,
+  in: "",
+  out: "",
+  retzifus: false,
+  notes: "",
+});
+const resetForm = () => {
+  state.id = null;
+  state.day = null;
+  state.session = null;
+  state.session_id = null;
+  state.in = null;
+  state.out = null;
+  state.retzifus = null;
+  state.notes = null;
+};
+
+const editClocking = (clock, type) => {
+  const isMorning = type === "morning";
+
+  const prefix = isMorning ? "morning" : "afternoon";
+
+  state.in =
+    clock[`${prefix}_in`] === "-"
+      ? null
+      : convertTo24Hour(clock[`${prefix}_in`]);
+
+  state.out =
+    clock[`${prefix}_out`] === "-"
+      ? null
+      : convertTo24Hour(clock[`${prefix}_out`]);
+
+  state.id = clock[`${prefix}_id`];
+  state.day = clock[`${prefix}_day`];
+  state.session = clock[`${prefix}_session`];
+  state.session_id = clock[`${prefix}_session_id`];
+
+  state.retzifus = isMorning
+    ? clock.retzifus_morning !== "NO"
+    : clock.retzifus_evening !== "NO";
+
+  editClockingModal.value = true;
+};
 
 const hebrewMonthNames = [
   "תשרי",
@@ -55,7 +109,7 @@ function findFirstHebrewMonthDay() {
 }
 
 function getDataForDay(day) {
-  return props.items.find((i) => i.day === day) || null;
+  return props?.items?.find((i) => i.day === day) || null;
 }
 
 function generateCalendar() {
@@ -72,7 +126,7 @@ function generateCalendar() {
   const firstHebrewMonth = G2Hnumber(
     currentDate.getFullYear(),
     currentDate.getMonth() + 1,
-    currentDate.getDate()
+    currentDate.getDate(),
   ).split("/")[0];
 
   while (true) {
@@ -93,7 +147,7 @@ function generateCalendar() {
     const nextHebrewMonth = G2Hnumber(
       currentDate.getFullYear(),
       currentDate.getMonth() + 1,
-      currentDate.getDate()
+      currentDate.getDate(),
     ).split("/")[0];
 
     if (nextHebrewMonth !== firstHebrewMonth) {
@@ -123,6 +177,56 @@ function g2h(date) {
   const [y, m, d] = date.split("-");
   return G2H(y, m, d);
 }
+
+const onSubmit = async (event) => {
+  isSubmitting.value = true;
+
+  const payload = {
+    ...event.data,
+    retzifus: event.data.retzifus ? 1 : 0,
+  };
+  try {
+    const response = await api(`/student-portal/clocking/edit`, {
+      method: "POST",
+      body: payload,
+    });
+
+    if (response?.success) {
+      toast.add({
+        title: "Success",
+        description: response?.message || "Schedule updated successfully",
+        color: "success",
+        duration: 2000,
+      });
+
+      emit("reload");
+    } else if (response?._data?.message) {
+      toast.add({
+        title: "Failed",
+        description: response._data.message,
+        color: "error",
+      });
+    } else {
+      toast.add({
+        title: "Failed",
+        description:
+          response?.message || "Something went wrong. Please try again.",
+        color: "error",
+      });
+    }
+  } catch (error) {
+    console.error("Submission error:", error);
+    toast.add({
+      title: "Error",
+      description: "An unexpected error occurred.",
+      color: "error",
+    });
+  } finally {
+    editClockingModal.value = false;
+    isSubmitting.value = false;
+    resetForm();
+  }
+};
 
 onMounted(generateCalendar);
 watch(() => props.items, generateCalendar, { deep: true });
@@ -200,21 +304,31 @@ watch(() => props.items, generateCalendar, { deep: true });
                 v-if="day.data"
                 class="mt-2 text-[10px] sm:text-xs p-2 space-y-1 flex flex-col gap-1"
               >
-                <div class="bg-blue-50 rounded">
-                  <span class="ml-1 text-gray-900">
-                    {{ day.data.morning_in }} – {{ day.data.morning_out }} |
-                    {{ day.data.retzifus_morning }} |
-                    {{ day.data.total_morning }}
-                  </span>
-                </div>
-
-                <div class="bg-blue-50 rounded">
-                  <span class="ml-1 text-gray-900">
-                    {{ day.data.afternoon_in }} – {{ day.data.afternoon_out }} |
-                    {{ day.data.retzifus_evening }} |
-                    {{ day.data.total_afternoon }}
-                  </span>
-                </div>
+                <button
+                  @click="editClocking(day.data, 'morning')"
+                  class="hover:underline cursor-pointer"
+                >
+                  <div class="bg-blue-50 rounded">
+                    <span class="ml-1 text-gray-900">
+                      {{ day.data.morning_in }} – {{ day.data.morning_out }} |
+                      {{ day.data.retzifus_morning }} |
+                      {{ day.data.total_morning }}
+                    </span>
+                  </div>
+                </button>
+                <button
+                  @click="editClocking(day.data, 'afternoon')"
+                  class="hover:underline cursor-pointer"
+                >
+                  <div class="bg-blue-50 rounded">
+                    <span class="ml-1 text-gray-900">
+                      {{ day.data.afternoon_in }} –
+                      {{ day.data.afternoon_out }} |
+                      {{ day.data.retzifus_evening }} |
+                      {{ day.data.total_afternoon }}
+                    </span>
+                  </div>
+                </button>
               </div>
             </td>
           </tr>
@@ -222,4 +336,92 @@ watch(() => props.items, generateCalendar, { deep: true });
       </table>
     </div>
   </div>
+
+  <!-- edit clocking modal -->
+  <UModal v-model:open="editClockingModal">
+    <!-- Custom Header -->
+    <template #header>
+      <div class="flex justify-between w-full">
+        <h2 class="text-xl font-bold text-primary">Edit Clocking</h2>
+
+        <!-- Close Button -->
+        <UButton
+          size="sm"
+          variant="outline"
+          color="primary"
+          class="rounded-full p-2"
+          icon="i-lucide-x"
+          @click="
+            () => {
+              editClockingModal = false;
+              resetForm();
+            }
+          "
+        >
+        </UButton>
+      </div>
+    </template>
+
+    <template #body>
+      <UForm :state="state" class="space-y-4" @submit="onSubmit">
+        <div class="grid grid-cols-2 my-6 place-items-center">
+          <UFormField label="In" class="flex gap-4 items-center">
+            <input
+              v-model="state.in"
+              type="time"
+              name="in"
+              id="in"
+              step="1"
+              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary focus:border-primary p-2.5"
+              required
+            />
+          </UFormField>
+          <UFormField label="Out" class="flex gap-4 items-center">
+            <input
+              v-model="state.out"
+              type="time"
+              name="out"
+              id="out"
+              step="1"
+              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary focus:border-primary p-2.5"
+              required
+            />
+          </UFormField>
+        </div>
+
+        <UCheckbox v-model="state.retzifus" size="lg" label="Retzifus" />
+        <UFormField label="Notes" name="notes">
+          <UTextarea
+            v-model="state.notes"
+            placeholder="Enter your notes..."
+            class="w-full"
+            required
+          />
+        </UFormField>
+        <div
+          class="flex justify-end items-center gap-2 mt-4 border-t border-gray-200 pt-4"
+        >
+          <UButton
+            color="neutral"
+            variant="solid"
+            @click="
+              () => {
+                editClockingModal = false;
+                resetForm();
+              }
+            "
+          >
+            Cancel
+          </UButton>
+          <UButton
+            type="submit"
+            :loading="isSubmitting"
+            :disabled="isSubmitting"
+          >
+            Confirm
+          </UButton>
+        </div>
+      </UForm>
+    </template>
+  </UModal>
 </template>

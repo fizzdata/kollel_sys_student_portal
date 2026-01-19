@@ -5,13 +5,13 @@ const token = useCookie("kollel_sys_token");
 const toast = useToast();
 
 const secondaryNavigation = [
-  { name: "Login", href: `/login` },
+  { name: "Login", href: `/` },
   { name: "Signup", href: `/signup` },
 ];
 
 const logout = async () => {
   // Redirect to login
-  navigateTo("/login");
+  navigateTo("/");
   // Clear cookies
   useCookie("kollel_sys_token").value = null;
   useCookie("kollel_sys_org").value = null;
@@ -40,7 +40,7 @@ const logout = async () => {
       token.value = null;
 
       // Redirect to login
-      navigateTo("/login");
+      navigateTo("/");
       // Clear cookies
       useCookie("kollel_sys_token").value = null;
       useCookie("kollel_sys_org").value = null;
