@@ -13,6 +13,7 @@ const org_pin = route?.query?.org_pin ?? saveOrgPin.value;
 const resetPasswordModal = ref(false);
 const showModal = ref(false);
 const logoUrl = ref(null);
+const orgName = ref("");
 const logoLoading = ref(true);
 const logoError = ref(false);
 
@@ -67,6 +68,7 @@ const fetchLogo = async () => {
 
     if (response?.success && response?.logo) {
       logoUrl.value = response.logo;
+      orgName.value = response.org_name;
     } else {
       logoError.value = true;
     }
@@ -258,7 +260,7 @@ const handleCancel = () => {
             alt="Organization Logo"
             class="max-w-xs max-h-64 object-contain drop-shadow-2xl mb-8"
           />
-          <h1 class="text-white text-2xl font-bold">Welcome Back</h1>
+          <h1 class="text-white text-2xl font-bold">{{ orgName }}</h1>
           <p class="text-indigo-100 mt-2 text-lg">Kollel System Student Portal</p>
         </div>
       </div>
