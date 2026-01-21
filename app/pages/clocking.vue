@@ -8,6 +8,17 @@ const clockings = ref([]);
 const date_from = ref(30);
 const date_to = ref(new Date().toISOString().slice(0, 10));
 const loading = ref(false);
+const pendingRequests = ref([]);
+const last_editable_date = ref("");
+// Helper to get current month's date range in YYYY-MM-DD
+const getMonthRange = (date = new Date()) => {
+  const start = new Date(date.getFullYear(), date.getMonth(), 1);
+  const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  return {
+    from: start.toISOString().slice(0, 10),
+    to: end.toISOString().slice(0, 10),
+  };
+};
 
 const normalizeClockings = (clockings) => {
   if (!clockings) return [];
@@ -75,18 +86,21 @@ const daysAgo = () => {
     .slice(0, 10);
 };
 
-const fetchClocking = async () => {
+// Updated: accepts optional { from, to } range. Defaults to current month.
+const fetchClocking = async (range) => {
+  console.log("🚀 ~ fetchClocking ~ range:", range);
+  const { from, to } = range ?? getMonthRange();
+
   try {
     loading.value = true;
     const response = await api(`/student-portal/clockings`, {
-      query: {
-        from: daysAgo(),
-        to: date_to.value,
-      },
+      query: { from, to },
     });
 
     if (response) {
       clockings.value = normalizeClockings(response?.clockings);
+      pendingRequests.value = response?.pending_edits || [];
+      last_editable_date.value = response?.last_editable_date?.slice(0, 10);
       console.log("🚀 ~ fetchClocking ~ clockings.value :", clockings.value);
     }
   } catch (err) {
@@ -105,7 +119,7 @@ onMounted(() => {
     <UCard class="rounded-2xl shadow-sm">
       <div class="flex justify-between items-center gap-4">
         <h2 class="text-xl font-bold">Clocking</h2>
-        <div>
+        <!-- <div>
           <select
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
             v-model="date_from"
@@ -115,12 +129,17 @@ onMounted(() => {
             <option value="90">Last 3 Months</option>
             <option value="180">Last 6 Months</option>
           </select>
-        </div>
+        </div> -->
       </div>
     </UCard>
 
     <div class="my-6">
-      <StudentCalender :items="clockings" :reload="fetchClocking" />
+      <StudentCalender
+        :items="clockings"
+        @reload="fetchClocking"
+        :pendingRequests="pendingRequests"
+        :last_editable_date="last_editable_date"
+      />
     </div>
 
     <div v-if="loading" class="fixed inset-0 z-50 bg-black/10">

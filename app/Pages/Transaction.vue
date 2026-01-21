@@ -1,9 +1,9 @@
 <script setup>
 import * as yup from "yup";
 import { getDayOfWeek, yiddish_date } from "~/common/Gregorian_to_Hebrew.js";
+
 definePageMeta({ layout: "sidebar" });
 
-const config = useRuntimeConfig();
 const api = useApi();
 const loading = ref(false);
 const balance = ref(null);
@@ -12,6 +12,7 @@ const generateChecksModal = ref(false);
 const isSubmitting = ref(false);
 const toast = useToast();
 const payeeOptions = ref([]);
+
 const { $printJS } = useNuxtApp();
 
 const state = reactive({
@@ -51,6 +52,7 @@ const fetchTransactions = async () => {
       payeeOptions.value = response.payees.map((payee) => ({
         label: payee.name,
         value: payee.id,
+        memo: payee.default_memo,
       }));
     } else {
       toast.add({
@@ -85,13 +87,13 @@ const onSubmit = async (event) => {
         color: "success",
         duration: 2000,
       });
-      if (import.meta.process.client && response?.pdf) {
-        $printJS({
-          printable: response.pdf,
-          type: "pdf",
-          base64: true,
-        });
-      }
+
+      $printJS({
+        printable: response.pdf,
+        type: "pdf",
+        base64: true,
+      });
+
       fetchTransactions();
       generateChecksModal.value = false;
     } else {
@@ -144,6 +146,11 @@ const columns = [
   {
     accessorKey: "date",
     header: "Date",
+    meta: {
+      class: {
+        th: "w-40",
+      },
+    },
     cell: ({ row }) => {
       const date = row.original.date;
 
@@ -164,9 +171,19 @@ const columns = [
   {
     accessorKey: "amount",
     header: "Amount",
+    meta: {
+      class: {
+        th: "w-20",
+      },
+    },
     cell: ({ row }) => deposit(row.original.amount),
   },
 ];
+
+const handleChange = (event) => {
+  const data = payeeOptions.value.find((item) => item.value === event);
+  state.memo = data?.memo;
+};
 </script>
 <template>
   <UCard class="rounded-2xl shadow-sm">
@@ -177,14 +194,14 @@ const columns = [
       <div class="space-y-1">
         <h2 class="text-2xl font-semibold text-gray-900">Transactions</h2>
 
-        <div class="text-sm text-gray-600 flex gap-2 items-center text-center">
+        <!-- <div class="text-sm text-gray-600 flex gap-2 items-center text-center">
           Balance:
 
           <USkeleton v-if="loading" class="h-5 w-12" />
           <span v-else class="font-semibold text-gray-900">
             {{ balance }}
           </span>
-        </div>
+        </div> -->
       </div>
 
       <!-- Action Button -->
@@ -205,6 +222,56 @@ const columns = [
       :data="transaction"
       class="flex-1 mt-6"
     />
+
+    <!-- <div class="overflow-x-auto">
+      <table class="min-w-full table-fixed w-full border-collapse">
+        <thead>
+          <tr class="bg-gray-100">
+            <th class="text-left p-3 w-64">Date</th>
+            <th class="text-left p-3 w-[28rem]">Description</th>
+            <th class="text-right p-3 w-32">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="loading">
+            <td class="p-3" colspan="3">
+              <div class="flex gap-2 items-center">
+                <USkeleton class="h-5 w-24" />
+                <USkeleton class="h-5 w-80" />
+                <USkeleton class="h-5 w-16 ml-auto" />
+              </div>
+            </td>
+          </tr>
+
+          <tr v-else-if="!transaction?.length">
+            <td class="p-3 text-gray-500" colspan="3">No transactions</td>
+          </tr>
+
+          <tr v-else v-for="(t, i) in transaction" :key="i" class="border-t">
+            <td class="p-3 align-top">
+              <div class="leading-tight">
+                <div class="font-medium text-gray-900">
+                  {{ getDayOfWeek(t.date) }}, {{ yiddish_date(t.date) }}
+                </div>
+                <div class="text-xs text-gray-500">{{ t.date }}</div>
+              </div>
+            </td>
+
+            <td class="p-3 align-top">
+              <div
+                class="whitespace-normal break-words text-gray-900 max-w-[28rem] leading-snug"
+              >
+                {{ t.description }}
+              </div>
+            </td>
+
+            <td class="p-3 text-right align-top">
+              {{ deposit(t.amount) }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div> -->
   </UCard>
 
   <!-- Modal for Generate Checks -->
@@ -247,6 +314,7 @@ const columns = [
                 :items="payeeOptions"
                 placeholder="Please Select"
                 class="w-full"
+                @update:model-value="handleChange"
               />
             </UFormField>
             <UFormField label="Amount" name="amount">
@@ -263,6 +331,7 @@ const columns = [
                 placeholder="Enter memo"
                 class="w-full"
                 size="lg"
+                readonly
               />
             </UFormField>
           </div>

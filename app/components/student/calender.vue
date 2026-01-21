@@ -6,15 +6,37 @@ import {
   G2Hnumber,
   H2G,
 } from "~/common/Gregorian_to_Hebrew.js";
+import { h } from "vue";
+import { UIcon } from "#components"; // Nuxt UI auto-import may already handle this
 
 const props = defineProps({
   items: {
     type: Array,
     default: () => [],
   },
+  pendingRequests: {
+    type: Array,
+    default: () => [],
+  },
+  last_editable_date: {
+    type: String,
+    default: "",
+  },
 });
 
 const emit = defineEmits(["reload"]);
+const currentRange = ref({ from: null, to: null });
+const firstDate = ref(null);
+const lastDate = ref(null);
+const deletePendingModal = ref(false);
+const selectedPendingToDelete = ref(null);
+
+function notifyRange() {
+  if (firstDate.value && lastDate.value) {
+    currentRange.value = { from: firstDate.value, to: lastDate.value };
+    emit("reload", currentRange.value);
+  }
+}
 
 const editClockingModal = ref(false);
 const weeks = ref([]);
@@ -43,6 +65,138 @@ const resetForm = () => {
   state.notes = null;
 };
 
+const editClick = (current, type) => {
+  console.log("🚀 ~ editClick ~ current:", current);
+
+  const isMorning = type === "morning";
+
+  const prefix = isMorning ? "morning" : "afternoon";
+
+  let id = current[`${prefix}_id`];
+  let day = current[`${prefix}_day`];
+  let session = current[`${prefix}_session`];
+
+  if (is_editable(id, day, session) === "p") {
+    toast.add({
+      title: "This entry is Pending",
+      color: "warning",
+    });
+
+    return;
+  } else if (is_editable(id, day, session) === "l") {
+    toast.add({
+      title: "This entry is Locked",
+      color: "info",
+    });
+    return;
+  } else {
+    editClocking(current, type);
+  }
+};
+
+const checkStatus = (current, type) => [];
+
+const deletePending = (clock, type) => {
+  console.log("🚀 ~ deletePending ~ clock:", clock);
+
+  const isMorning = type === "morning";
+
+  const prefix = isMorning ? "morning" : "afternoon";
+
+  let id = clock[`${prefix}_id`];
+  let day = clock[`${prefix}_day`];
+  let session = clock[`${prefix}_session`];
+
+  const pendingId = props.pendingRequests.find((request) => {
+    if (id === null) {
+      return request.day === day && request.session === session;
+    } else {
+      return request.clocking_id === id;
+    }
+  })?.id;
+
+  console.log("pendingIdm", pendingId);
+  selectedPendingToDelete.value = pendingId;
+  deletePendingModal.value = true;
+  return;
+};
+
+function button_text(current, type) {
+  const isMorning = type === "morning";
+
+  const prefix = isMorning ? "morning" : "afternoon";
+
+  let id = current[`${prefix}_id`];
+  let day = current[`${prefix}_day`];
+  let session = current[`${prefix}_session`];
+
+  const status = is_editable(id, day, session);
+  console.log("🚀 ~ button_text ~ status:", status);
+
+  if (status === "p") {
+    return h(UIcon, {
+      name: "la:hourglass",
+      class: "w-5 h-5 text-gray-500",
+    });
+  }
+
+  if (status === "l") {
+    return h(UIcon, {
+      src: "la:lock",
+      class: "w-5 h-5 text-gray-500",
+    });
+  }
+
+  return h(UIcon, {
+    name: "la:pen",
+    class: "w-5 h-5 ",
+  });
+}
+
+const confirmDeletePending = async () => {
+  isSubmitting.value = true;
+
+  try {
+    const response = await api(`/student-portal/clocking/delete-pending`, {
+      method: "POST",
+      body: { pending_id: selectedPendingToDelete.value },
+    });
+
+    if (response?.success) {
+      toast.add({
+        title: "Success",
+        description: response?.message || "Pending Request Deleted",
+        color: "success",
+        duration: 2000,
+      });
+      emit("reload");
+    } else if (response?._data?.message) {
+      toast.add({
+        title: "Failed",
+        description: response._data.message,
+        color: "error",
+      });
+    } else {
+      toast.add({
+        title: "Failed",
+        description:
+          response?.message || "Something went wrong. Please try again.",
+        color: "error",
+      });
+    }
+  } catch (error) {
+    console.error("Submission error:", error);
+    toast.add({
+      title: "Error",
+      description: "An unexpected error occurred.",
+      color: "error",
+    });
+  } finally {
+    selectedPendingToDelete.value = null;
+    deletePendingModal.value = false;
+    isSubmitting.value = false;
+  }
+};
 const editClocking = (clock, type) => {
   const isMorning = type === "morning";
 
@@ -116,7 +270,6 @@ function generateCalendar() {
   const firstDay = findFirstHebrewMonthDay();
   const weeksArr = [];
   let week = [];
-
   let currentDate = new Date(firstDay);
 
   for (let i = 0; i < firstDay.getDay(); i++) {
@@ -131,11 +284,7 @@ function generateCalendar() {
 
   while (true) {
     const dateString = formatDate(currentDate);
-
-    week.push({
-      date: dateString,
-      data: getDataForDay(dateString),
-    });
+    week.push({ date: dateString, data: getDataForDay(dateString) });
 
     currentDate.setDate(currentDate.getDate() + 1);
 
@@ -160,22 +309,59 @@ function generateCalendar() {
   }
 
   weeks.value = weeksArr;
+
+  // Month-basis range: first day of current Hebrew month to the day before the next Hebrew month
+  firstDate.value = formatDate(firstDay);
+  const lastDay = new Date(currentDate);
+  lastDay.setDate(lastDay.getDate() - 1);
+  lastDate.value = formatDate(lastDay);
 }
 
 function prevMonth() {
   hMonth.value === 1 ? ((hMonth.value = 13), hYear.value--) : hMonth.value--;
   generateCalendar();
+  notifyRange();
 }
 
 function nextMonth() {
   hMonth.value === 13 ? ((hMonth.value = 1), hYear.value++) : hMonth.value++;
   generateCalendar();
+  notifyRange();
 }
 
 function g2h(date) {
   if (!date) return "";
   const [y, m, d] = date.split("-");
   return G2H(y, m, d);
+}
+
+function is_editable(id, date, session) {
+  console.log("props.last_editable_date", props.last_editable_date);
+
+  var last_editable_date = new Date(props.last_editable_date);
+  console.log("🚀 ~ is_editable ~ last_editable_date:", last_editable_date);
+  var clocking = new Date(date);
+
+  if (clocking < last_editable_date) {
+    return "l";
+  }
+
+  for (let key in props.pendingRequests) {
+    if (props.pendingRequests.hasOwnProperty(key)) {
+      let request = props.pendingRequests[key];
+      if (id === null) {
+        if (request.day === date && request.session === session) {
+          return "p";
+        }
+      } else {
+        if (request.clocking_id === id) {
+          return "p";
+        }
+      }
+    }
+  }
+
+  return "e";
 }
 
 const onSubmit = async (event) => {
@@ -194,7 +380,9 @@ const onSubmit = async (event) => {
     if (response?.success) {
       toast.add({
         title: "Success",
-        description: response?.message || "Schedule updated successfully",
+        description: h("span", {
+          innerHTML: response?.message || "Schedule updated successfully",
+        }),
         color: "success",
         duration: 2000,
       });
@@ -203,14 +391,19 @@ const onSubmit = async (event) => {
     } else if (response?._data?.message) {
       toast.add({
         title: "Failed",
-        description: response._data.message,
+        description: h("span", {
+          innerHTML: response._data.message,
+        }),
         color: "error",
       });
     } else {
       toast.add({
         title: "Failed",
-        description:
-          response?.message || "Something went wrong. Please try again.",
+        description: h("span", {
+          innerHTML:
+            response?.message || "Something went wrong. Please try again.",
+        }),
+
         color: "error",
       });
     }
@@ -304,31 +497,89 @@ watch(() => props.items, generateCalendar, { deep: true });
                 v-if="day.data"
                 class="mt-2 text-[10px] sm:text-xs p-2 space-y-1 flex flex-col gap-1"
               >
-                <button
-                  @click="editClocking(day.data, 'morning')"
-                  class="hover:underline cursor-pointer"
-                >
-                  <div class="bg-blue-50 rounded">
-                    <span class="ml-1 text-gray-900">
-                      {{ day.data.morning_in }} – {{ day.data.morning_out }} |
-                      {{ day.data.retzifus_morning }} |
-                      {{ day.data.total_morning }}
-                    </span>
-                  </div>
-                </button>
-                <button
-                  @click="editClocking(day.data, 'afternoon')"
-                  class="hover:underline cursor-pointer"
-                >
-                  <div class="bg-blue-50 rounded">
-                    <span class="ml-1 text-gray-900">
-                      {{ day.data.afternoon_in }} –
-                      {{ day.data.afternoon_out }} |
-                      {{ day.data.retzifus_evening }} |
-                      {{ day.data.total_afternoon }}
-                    </span>
-                  </div>
-                </button>
+                <div class="flex items-center justify-center gap-2">
+                  <button
+                    @click="editClick(day.data, 'morning')"
+                    class="hover:underline cursor-pointer"
+                  >
+                    <div
+                      class="bg-blue-50 rounded flex items-center"
+                      :class="{
+                        'bg-warning-100':
+                          is_editable(
+                            day.data.afternoon_id,
+                            day.data.afternoon_day,
+                            day.data.afternoon_session,
+                          ) === 'p',
+                      }"
+                    >
+                      <component :is="button_text(day.data, 'morning')" />
+
+                      <span class="ml-1 text-gray-900">
+                        {{ day.data.morning_in }} – {{ day.data.morning_out }} |
+                        {{ day.data.retzifus_morning }} |
+                        {{ day.data.total_morning }}
+                      </span>
+                    </div>
+                  </button>
+
+                  <UButton
+                    v-if="
+                      is_editable(
+                        day.data.morning_id,
+                        day.data.morning_day,
+                        day.data.morning_session,
+                      ) === 'p'
+                    "
+                    color="error"
+                    variant="soft"
+                    icon="i-lucide-trash-2"
+                    size="xs"
+                    @click="deletePending(day.data, 'morning')"
+                  />
+                </div>
+
+                <div class="flex items-center justify-center gap-2">
+                  <button
+                    @click="editClick(day.data, 'afternoon')"
+                    class="hover:underline cursor-pointer"
+                  >
+                    <div
+                      class="bg-blue-50 rounded flex items-center"
+                      :class="{
+                        'bg-warning-100':
+                          is_editable(
+                            day.data.afternoon_id,
+                            day.data.afternoon_day,
+                            day.data.afternoon_session,
+                          ) === 'p',
+                      }"
+                    >
+                      <component :is="button_text(day.data, 'afternoon')" />
+
+                      <span class="ml-1 text-gray-900">
+                        {{ day.data.afternoon_in }} –
+                        {{ day.data.afternoon_out }} |
+                        {{ day.data.retzifus_evening }} |
+                        {{ day.data.total_afternoon }}
+                      </span>
+                    </div>
+                  </button>
+                  <UButton
+                    v-if="
+                      is_editable(
+                        day.data.afternoon_id,
+                        day.data.afternoon_day,
+                        day.data.afternoon_session,
+                      ) === 'p'
+                    "
+                    color="error"
+                    variant="soft"
+                    icon="i-lucide-trash-2"
+                    size="xs"
+                    @click="deletePending(day.data, 'afternoon')"
+                  />
+                </div>
               </div>
             </td>
           </tr>
@@ -422,6 +673,46 @@ watch(() => props.items, generateCalendar, { deep: true });
           </UButton>
         </div>
       </UForm>
+    </template>
+  </UModal>
+
+  <UModal
+    v-model:open="deletePendingModal"
+    title="Confirm Delete Pending Request"
+    :close="{
+      color: 'primary',
+      variant: 'outline',
+      class: 'rounded-full',
+    }"
+  >
+    <template #body>
+      <div>
+        <p>Are you sure you want to delete this pending request?</p>
+      </div>
+      <div class="flex gap-2 justify-end items-center">
+        <UButton
+          color="neutral"
+          variant="solid"
+          class="mt-4"
+          @click="
+            () => {
+              deletePendingModal = false;
+            }
+          "
+        >
+          Cancel
+        </UButton>
+        <UButton
+          color="error"
+          variant="solid"
+          class="mt-4"
+          :loading="isSubmitting"
+          :disabled="isSubmitting"
+          @click="confirmDeletePending()"
+        >
+          Delete
+        </UButton>
+      </div>
     </template>
   </UModal>
 </template>

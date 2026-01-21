@@ -19,7 +19,6 @@ const api = useApi();
 const token = useCookie("kollel_stundent_token");
 const student = useCookie("kollel_student");
 const org_pin = useCookie("kollel_sys_org_pin");
-console.log("🚀 ~ student:", student.value);
 
 const toast = useToast();
 const navigation = [
@@ -68,11 +67,6 @@ const logout = async () => {
     console.error("Error during sign-up:", error);
   }
 };
-
-const userNavigation = [
-  { name: "Profile", href: "/profile" },
-  { name: "Sign out", href: "#", action: logout },
-];
 </script>
 
 <template>
@@ -162,11 +156,9 @@ const userNavigation = [
         class="flex grow flex-col gap-y-5 border-r border-gray-200 bg-white/90 backdrop-blur-md shadow-md px-6 pb-4 rounded-tr-2xl rounded-br-2xl"
       >
         <!-- Brand -->
-        <!-- <ULink to="/"> -->
         <div class="flex h-16 items-center font-bold text-primary text-xl">
           Kollel System
         </div>
-        <!-- </ULink> -->
         <!-- Navigation -->
         <nav class="flex flex-1 flex-col">
           <ul class="flex flex-1 flex-col gap-y-4">
@@ -209,64 +201,26 @@ const userNavigation = [
         <div class="flex-1"></div>
 
         <!-- Profile dropdown -->
-        <Menu as="div" class="relative">
-          <template #default="{ open }">
-            <MenuButton class="relative flex items-center gap-2">
-              <span class="sr-only">Open user menu</span>
-              <UAvatar
-                v-if="student"
-                :alt="
-                  student?.first_yiddish_name + ' ' + student?.last_yiddish_name
-                "
-                size="md"
-              />
-              <span class="hidden lg:flex lg:items-center gap-1 cursor-pointer">
-                <span class="text-sm font-semibold text-gray-900">
-                  {{
-                    student?.first_yiddish_name +
-                    " " +
-                    student?.last_yiddish_name
-                  }}
-                </span>
-                <UIcon
-                  name="i-lucide-chevron-down"
-                  class="ml-2 size-5 text-gray-800 transition-transform duration-200"
-                  :class="{ 'rotate-180': open }"
-                />
+        <div as="div" class="relative">
+          <div class="relative flex items-center gap-2">
+            <span class="sr-only">Open user menu</span>
+            <UAvatar
+              v-if="student"
+              :alt="
+                student?.first_yiddish_name + ' ' + student?.last_yiddish_name
+              "
+              size="md"
+            />
+            <span class="flex items-center gap-1">
+              <span class="text-sm font-semibold text-gray-900">
+                {{
+                  student?.first_yiddish_name + " " + student?.last_yiddish_name
+                }}
               </span>
-            </MenuButton>
-
-            <transition
-              enter-active-class="transition ease-out duration-100"
-              enter-from-class="transform opacity-0 scale-95"
-              enter-to-class="transform scale-100"
-              leave-active-class="transition ease-in duration-75"
-              leave-from-class="transform scale-100"
-              leave-to-class="transform opacity-0 scale-95"
-            >
-              <MenuItems
-                class="absolute right-0 z-10 mt-2 w-36 origin-top-right rounded-md bg-white py-2 shadow-lg focus:outline-none"
-              >
-                <MenuItem
-                  v-for="item in userNavigation"
-                  :key="item.name"
-                  v-slot="{ active }"
-                >
-                  <ULink
-                    :to="item.href"
-                    :class="[
-                      active ? 'bg-gray-100' : '',
-                      'block px-3 py-2 text-sm font-medium text-gray-900 transition-colors duration-200',
-                    ]"
-                    @click="item.action && item.action()"
-                  >
-                    {{ item.name }}
-                  </ULink>
-                </MenuItem>
-              </MenuItems>
-            </transition>
-          </template>
-        </Menu>
+            </span>
+          </div>
+        </div>
+        <UButton @click="logout" class="ml-4"> Log Out </UButton>
       </header>
 
       <main class="py-10">
