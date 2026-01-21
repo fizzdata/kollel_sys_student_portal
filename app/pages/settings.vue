@@ -6,7 +6,7 @@ definePageMeta({
 const toast = useToast();
 const api = useApi();
 const isSubmitting = ref(false);
-const activeTab = ref("0");
+const activeTab = ref("1");
 const currentPassshow = ref(false);
 const newPassShow = ref(false);
 const confirmPassShow = ref(false);
@@ -166,13 +166,13 @@ const submitUpdatePassword = async (event) => {
     </div>
   </UCard>
 
-  <UTabs v-model="activeTab" :items="tabs" variant="link" class="mt-6" />
-  <div
+  <!-- <UTabs v-model="activeTab" :items="tabs" variant="link" class="mt-6" /> -->
+  <!-- <div
     v-if="activeTab === '0'"
     class="relative flex items-center justify-center mt-8"
   >
     <UCard class="w-full max-w-lg p-6 sm:p-8">
-      <!-- Title -->
+      Title
       <p class="my-6 text-center text-lg font-medium text-gray-800">
         Reset your password
       </p>
@@ -183,7 +183,7 @@ const submitUpdatePassword = async (event) => {
         Please enter your pin.
       </p>
 
-      <!-- Form -->
+      Form
       <UForm
         :schema="schema"
         :state="state"
@@ -220,7 +220,7 @@ const submitUpdatePassword = async (event) => {
         </UButton>
       </UForm>
     </UCard>
-  </div>
+  </div> -->
 
   <div
     v-if="activeTab === '1'"

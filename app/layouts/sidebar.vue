@@ -70,164 +70,78 @@ const logout = async () => {
 </script>
 
 <template>
-  <div>
-    <!-- Mobile Sidebar -->
-    <TransitionRoot as="template" :show="sidebarOpen">
-      <Dialog class="relative z-50 lg:hidden" @close="sidebarOpen = false">
-        <!-- Overlay -->
-        <TransitionChild
-          as="template"
-          enter="transition-opacity ease-linear duration-300"
-          enter-from="opacity-0"
-          enter-to="opacity-100"
-          leave="transition-opacity ease-linear duration-300"
-          leave-from="opacity-100"
-          leave-to="opacity-0"
-        >
-          <div class="fixed inset-0 bg-gray-900/80" />
-        </TransitionChild>
-
-        <!-- Sidebar Panel -->
-        <div class="fixed inset-0 flex">
-          <TransitionChild
-            as="template"
-            enter="transition ease-in-out duration-300 transform"
-            enter-from="-translate-x-full"
-            enter-to="translate-x-0"
-            leave="transition ease-in-out duration-300 transform"
-            leave-from="translate-x-0"
-            leave-to="-translate-x-full"
-          >
-            <DialogPanel
-              class="relative flex w-full max-w-xs flex-1 flex-col bg-white/95 backdrop-blur-md shadow-lg rounded-tr-2xl rounded-br-2xl px-6 pb-4"
+  <div class="flex flex-col">
+    <header class="bg-white">
+      <nav
+        class="mx-auto flex max-w-7xl items-center justify-between gap-x-6 p-6 px-6 lg:px-8"
+        aria-label="Global"
+      >
+        <div class="flex lg:flex-1">
+          <div class="flex items-center">
+            <div
+              class="bg-primary font-bold text-white w-10 h-10 rounded-lg flex items-center justify-center mr-3 shadow-md"
             >
-              <!-- Close button -->
-              <div
-                class="absolute top-0 left-full flex w-16 justify-center pt-5"
+              K
+            </div>
+            <div class="flex flex-col">
+              <span class="text-lg font-bold text-gray-800"
+                >Kollel<span class="text-brand-600"> System</span></span
               >
-                <button
-                  class="-m-2.5 p-2.5 cursor-pointer"
-                  @click="sidebarOpen = false"
-                  aria-label="Close sidebar"
-                >
-                  <UIcon name="i-lucide-x" class="size-6 text-white" />
-                </button>
-              </div>
-
-              <!-- Brand -->
-              <!-- <ULink to="/"> -->
-              <div
-                class="flex h-16 items-center font-bold text-primary text-xl"
+              <span class="text-sm font-bold text-gray-800"
+                >Student<span class="text-brand-600"> Portal</span></span
               >
-                Kollel System
-              </div>
-              <!-- </ULink> -->
-              <!-- Navigation -->
-              <nav class="flex flex-1 flex-col mt-4">
-                <ul class="flex flex-1 flex-col gap-y-3">
-                  <!-- Menu Items -->
-                  <li v-for="item in navigation" :key="item.key">
-                    <ULink
-                      :to="item.href"
-                      :class="[
-                        isActive(item.href)
-                          ? 'bg-gray-200 text-gray-700 border-l-4 border-gray-600'
-                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-700',
-                        'block rounded-md p-2 text-sm font-semibold transition-colors duration-200',
-                      ]"
-                      @click="sidebarOpen = false"
-                    >
-                      {{ item?.name }}
-                    </ULink>
-                  </li>
-                </ul>
-              </nav>
-            </DialogPanel>
-          </TransitionChild>
-        </div>
-      </Dialog>
-    </TransitionRoot>
-
-    <!-- Desktop Sidebar -->
-    <div
-      class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col"
-    >
-      <div
-        class="flex grow flex-col gap-y-5 border-r border-gray-200 bg-white/90 backdrop-blur-md shadow-md px-6 pb-4 rounded-tr-2xl rounded-br-2xl"
-      >
-        <!-- Brand -->
-        <div class="flex h-16 items-center font-bold text-primary text-xl">
-          Kollel System
-        </div>
-        <!-- Navigation -->
-        <nav class="flex flex-1 flex-col">
-          <ul class="flex flex-1 flex-col gap-y-4">
-            <!-- Menu Items -->
-            <li v-for="item in navigation" :key="item.key">
-              <ULink
-                :to="item.href"
-                :class="[
-                  isActive(item.href)
-                    ? 'bg-gray-200 text-gray-700 border-l-4 border-gray-600'
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-700',
-                  'flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold transition-colors duration-200',
-                ]"
-              >
-                <!-- Optional: Icon -->
-                <!-- <MenuIcon class="w-5 h-5" /> -->
-                {{ item?.name }}
-              </ULink>
-            </li>
-          </ul>
-        </nav>
-      </div>
-    </div>
-
-    <!-- Main content -->
-    <div class="lg:pl-72">
-      <header
-        class="flex h-16 items-center border-b border-gray-200 bg-white px-4 shadow-sm"
-      >
-        <!-- Hamburger icon for mobile -->
-        <button
-          class="lg:hidden flex flex-col justify-center items-center w-8 h-8 gap-1.5 p-1"
-          @click="sidebarOpen = true"
-          aria-label="Open sidebar"
-        >
-          <UIcon name="i-lucide-menu" class="size-6" />
-        </button>
-
-        <!-- Spacer -->
-        <div class="flex-1"></div>
-
-        <!-- Profile dropdown -->
-        <div as="div" class="relative">
-          <div class="relative flex items-center gap-2">
-            <span class="sr-only">Open user menu</span>
-            <UAvatar
-              v-if="student"
-              :alt="
-                student?.first_yiddish_name + ' ' + student?.last_yiddish_name
-              "
-              size="md"
-            />
-            <span class="flex items-center gap-1">
-              <span class="text-sm font-semibold text-gray-900">
-                {{
-                  student?.first_yiddish_name + " " + student?.last_yiddish_name
-                }}
-              </span>
-            </span>
+            </div>
           </div>
         </div>
-        <UButton @click="logout" class="ml-4"> Log Out </UButton>
-      </header>
 
-      <main class="py-10">
-        <div class="px-4 sm:px-6 lg:px-8">
-          <slot />
+        <div class="flex gap-x-12">
+          <nav class="hidden md:flex w-full justify-center">
+            <ul class="flex flex-wrap gap-x-4 items-center justify-center">
+              <!-- Menu Items -->
+              <li v-for="item in navigation" :key="item.key">
+                <ULink
+                  :to="item.href"
+                  :class="[
+                    isActive(item.href)
+                      ? 'bg-gray-200 text-gray-700 '
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-700',
+                    'flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold transition-colors duration-200',
+                  ]"
+                >
+                  {{ item?.name }}
+                </ULink>
+              </li>
+            </ul>
+          </nav>
         </div>
-      </main>
-    </div>
+
+        <div class="flex flex-1 items-center justify-end gap-x-6">
+          <UButton @click="logout" class="ml-4"> Log Out </UButton>
+        </div>
+      </nav>
+
+      <nav class="flex w-full justify-center mb-4 md:hidden">
+        <ul class="flex flex-wrap gap-x-4 items-center justify-center">
+          <!-- Menu Items -->
+          <li v-for="item in navigation" :key="item.key">
+            <ULink
+              :to="item.href"
+              :class="[
+                isActive(item.href)
+                  ? 'bg-gray-200 text-gray-700'
+                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-700',
+                'flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold transition-colors duration-200',
+              ]"
+            >
+              {{ item?.name }}
+            </ULink>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="max-w-7xl mx-auto mt-5 w-full px-6 lg:px-8">
+      <slot />
+    </main>
   </div>
 </template>
