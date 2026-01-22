@@ -22,6 +22,7 @@ const org_pin = useCookie("kollel_sys_org_pin");
 
 const toast = useToast();
 const navigation = [
+  { name: "Dashboard", href: "/dashboard", key: "dashboard" },
   { name: "Clocking", href: "/clocking", key: "clocking" },
   { name: "Transaction", href: "/transaction", key: "transaction" },
   { name: "Settings", href: "/settings", key: "settings" },

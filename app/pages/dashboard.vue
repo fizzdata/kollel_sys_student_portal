@@ -1,523 +1,233 @@
 <script setup>
-definePageMeta({
-  layout: "sidebar",
-  middleware: ["auth"],
-});
+definePageMeta({ layout: "sidebar" });
 
-const route = useRoute();
-const studentId = route.params.id;
 const loading = ref(false);
-const api = useApi();
-const student = ref({});
-const showModal = ref(false);
-const selectedStudent = ref(null);
-const activeTab = ref("0");
 const toast = useToast();
+const api = useApi();
+const studentPortalDummy = {
+  student: {
+    first_yiddish_name: "אברהם",
+    last_yiddish_name: "אויש",
+    phone: "9176851389",
+    address: "NY, USA",
+    active: 1,
+    created_at: "2025-12-23 01:41:20",
+  },
 
-const clockingsData = ref([]);
-const transactionsData = ref([]);
-const responsesData = ref([]);
-const checksData = ref([]);
-const tabs = [
-  { label: "Clockings", key: "clockings", icon: "i-lucide-clock" },
-  { label: "Deposits", key: "transactions", icon: "i-lucide-credit-card" },
-  { label: "Checks", key: "checks", icon: "i-lucide-file-check" },
-  { label: "Responses", key: "responses", icon: "i-lucide-help-circle" },
-];
+  balance: 2862,
 
-const normalizeClockings = (clockings) => {
-  if (!clockings) return [];
+  // Morning & Afternoon percentages (This Month)
+  percent_m: 12.75,
+  percent_a: 18.5,
 
-  return Object.values(clockings).map((dayEntry) => {
-    // Normalize clocking to array
-    const sessions = Array.isArray(dayEntry.clocking)
-      ? dayEntry.clocking
-      : Object.values(dayEntry.clocking || {});
+  // Morning & Afternoon percentages (Last Month)
+  percent_m_last: 10.25,
+  percent_a_last: 15.75,
 
-    const row = {
-      day: dayEntry.day,
+  came_on_time_this_month: "82%",
+  came_on_time_last_month: "75%",
 
-      morning_in: "-",
-      morning_out: "-",
-      retzifus_morning: "-",
-      total_morning: "-",
-
-      afternoon_in: "-",
-      afternoon_out: "-",
-      retzifus_evening: "-",
-      total_afternoon: "-",
-    };
-
-    sessions.forEach((s) => {
-      if (s.session === 1) {
-        row.morning_in = secondsToAmPm(s.in);
-        row.morning_out = secondsToAmPm(s.out);
-        row.retzifus_morning = s.retzifus === 0 ? "NO" : "-";
-        row.total_morning = secondsToPercent(s.out - s.in, s.schedule_total);
-      }
-
-      if (s.session === 2) {
-        row.afternoon_in = secondsToAmPm(s.in);
-        row.afternoon_out = secondsToAmPm(s.out);
-        row.retzifus_evening = s.retzifus === 0 ? "NO" : "-";
-        row.total_afternoon = secondsToPercent(s.out - s.in, s.schedule_total);
-      }
-    });
-
-    return row;
-  });
+  groups: [
+    {
+      name: "ער האט יא פראגראמען - און איז א אברך",
+    },
+    {
+      name: "כולל ערב",
+    },
+  ],
 };
 
-const secondsToAmPm = (seconds) => {
-  if (seconds == null) return "-";
+const thisMonthPercent =
+  studentPortalDummy.percent_m + studentPortalDummy.percent_a;
+// 31.25%
 
-  let hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
+const lastMonthPercent =
+  studentPortalDummy.percent_m_last + studentPortalDummy.percent_a_last;
+// 26%
 
-  const ampm = hours >= 12 ? "PM" : "AM";
-  hours = hours % 12 || 12;
+const percentDiff = thisMonthPercent - lastMonthPercent;
+// +5.25%
 
-  return `${hours.toString().padStart(2, "0")}:${minutes
-    .toString()
-    .padStart(2, "0")}:${secs.toString().padStart(2, "0")} ${ampm}`;
-};
+const cameOnTimeThis = parseInt(studentPortalDummy.came_on_time_this_month);
+// 82
 
-const secondsToPercent = (workedSeconds, scheduledSeconds) => {
-  if (!workedSeconds || !scheduledSeconds) return "-";
+const cameOnTimeLast = parseInt(studentPortalDummy.came_on_time_last_month);
+// 75
 
-  const percent = (workedSeconds / scheduledSeconds) * 100;
-  return `${Math.round(percent)}%`;
-};
-
-const fetchStudentDetail = async (refresh = false) => {
+const fetchStudentInfo = async () => {
   try {
-    if (refresh) {
-      loading.value = true;
-    }
+    loading.value = true;
+    const response = await api(`/student-portal`);
+    console.log("🚀 ~ fetchStudentInfo ~ response:", response);
 
-    const response = await api(`/api/students/${studentId}`);
-
-    if (response) {
-      student.value = response;
-      clockingsData.value = normalizeClockings(response?.clockings);
-      transactionsData.value = response?.transactions;
-      responsesData.value = response?.Student_responses;
-      checksData.value = response?.checks;
+    if (response?.success) {
+      // transaction.value = response?.transaction || [];
+    } else {
+      toast.add({
+        title: "Error",
+        description: response?.message || "Failed to fetch Transactions",
+        color: "error",
+      });
     }
-  } catch (err) {
-    console.log("🚀 ~ fetchStudentDetail ~ err:", err);
+  } catch (error) {
+    console.error("Fetch error:", error);
+    toast.add({
+      title: "Error",
+      description: "An unexpected error occurred while fetching transactions",
+      color: "error",
+    });
   } finally {
-    if (refresh) {
-      loading.value = false;
-    }
+    loading.value = false;
   }
 };
 
-const onSubmit = async () => {
-  await fetchStudentDetail(true);
-};
-
-const handleCancel = () => {
-  showModal.value = false;
-};
-
-const clockingsColumns = [
-  { accessorKey: "day", header: "Date" },
-  { accessorKey: "morning_in", header: "Morning In" },
-  { accessorKey: "morning_out", header: "Morning Out" },
-  { accessorKey: "retzifus_morning", header: "Retzifus" },
-  { accessorKey: "total_morning", header: "Total morning" },
-  { accessorKey: "afternoon_in", header: "Afternoon In" },
-  { accessorKey: "afternoon_out", header: "Afternoon out" },
-  { accessorKey: "retzifus_evening", header: "Retzifus" },
-  { accessorKey: "total_afternoon", header: "Total Afternoon" },
-];
-const transactionsColumns = [
-  { accessorKey: "date", header: "Date" },
-  // { accessorKey: "type", header: "Type" },
-  { accessorKey: "amount", header: "Amount" },
-  { accessorKey: "description", header: "Description" },
-];
-const checksColumns = [
-  {
-    accessorKey: "student_id",
-    header: "Name",
-    cell: ({ row }) => {
-      return (
-        student.value?.Student?.first_name +
-        " " +
-        student.value?.Student?.last_name
-      );
-    },
-  },
-  { accessorKey: "amount", header: "Amount" },
-  { accessorKey: "check_date", header: "Check Date" },
-  { accessorKey: "check_number", header: "Check Number" },
-  {
-    accessorKey: "cleared",
-    header: "Cleared",
-    cell: ({ row }) => {
-      const cleared = row.original.cleared;
-      return cleared === 1 ? "Paid" : "Not Paid";
-    },
-  },
-  { accessorKey: "pay_to", header: "Pay To" },
-];
-
-const responsesColumns = [
-  { accessorKey: "date", header: "Date" },
-  { accessorKey: "question", header: "Question" },
-  { accessorKey: "answer", header: "Answer" },
-];
-
-const handleEditClick = (student) => {
-  selectedStudent.value = student;
-  showModal.value = true;
-};
-
-const toggleStudentStatus = async (student) => {
-  // toggle locally
-  const newStatus = !student.active;
-  student.active = newStatus;
-
-  try {
-    const response = await api(`/api/students/${student.id}/status`, {
-      method: "PATCH",
-      body: {
-        active: newStatus,
-      },
-    });
-
-    if (response?.success) {
-      toast.add({
-        title: "Success",
-        description: response?.msg ? response?.msg : "Student deactivated",
-        color: "success",
-        duration: 2000,
-      });
-
-      await fetchStudentDetail(false);
-    } else {
-      toast.add({
-        title: "Failed",
-        description: response?.msg ? response?.msg : "Unable to deactivate.",
-        color: "error",
-        duration: 2000,
-      });
-
-      await fetchStudentDetail(false);
-    }
-  } catch (error) {
-    console.error("Submission error:", error);
-    toast.add({
-      title: "Error",
-      description: "An unexpected error occurred.",
-      color: "error",
-    });
-  }
-};
-
-const handleResetPasswordClick = async (student) => {
-  try {
-    const response = await api(`/api/students/reset-passwords`, {
-      method: "POST",
-      body: {
-        id: student.id,
-      },
-    });
-
-    if (response?.success) {
-      toast.add({
-        title: "Success",
-        description: response?.msg ? response?.msg : "Student deactivated",
-        color: "success",
-        duration: 2000,
-      });
-
-      await fetchStudentDetail(false);
-    } else {
-      toast.add({
-        title: "Failed",
-        description: response?.msg ? response?.msg : "Unable to deactivate.",
-        color: "error",
-        duration: 2000,
-      });
-
-      await fetchStudentDetail(false);
-    }
-  } catch (error) {
-    console.error("Submission error:", error);
-    toast.add({
-      title: "Error",
-      description: "An unexpected error occurred.",
-      color: "error",
-    });
-  }
-};
 onMounted(async () => {
-  await fetchStudentDetail(true);
+  // await fetchStudentInfo();
 });
 </script>
 
 <template>
-  <div>
-    <div
-      class="flex flex-col md:flex-row md:justify-between items-center gap-4"
-    >
-      <div class="flex items-start w-full md:w-fit">
-        <UButton
-          variant="outline"
-          color="primary"
-          to="/students"
-          icon="i-lucide-arrow-left"
-          class="w-fit"
+  <UCard class="rounded-2xl shadow-sm">
+    <div class="flex items-center gap-4">
+      <UAvatar
+        size="xl"
+        :alt="
+          studentPortalDummy?.student.first_yiddish_name +
+          ' ' +
+          studentPortalDummy?.student.last_yiddish_name
+        "
+      />
+      <div class="flex-1">
+        <div class="flex justify-between items-center">
+          <h2 class="text-lg font-semibold">
+            {{ studentPortalDummy?.student.first_yiddish_name }}
+            {{ studentPortalDummy?.student.last_yiddish_name }}
+          </h2>
+          <UBadge
+            :color="studentPortalDummy?.student.active ? 'success' : 'error'"
+            variant="soft"
+          >
+            {{ studentPortalDummy?.student.active ? "Active" : "Inactive" }}
+          </UBadge>
+        </div>
+        <div class="mt-2 grid grid-cols-1 gap-2 text-sm">
+          <p>
+            <span class="font-medium">Phone:</span>
+            {{ studentPortalDummy.student?.phone }}
+          </p>
+          <p>
+            <span class="font-medium">Address:</span>
+            {{ studentPortalDummy?.student?.address }}
+          </p>
+          <p>
+            <span class="font-medium">Wage Group:</span>
+            {{
+              studentPortalDummy?.groups?.map((group) => group.name).join(", ")
+            }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </UCard>
+
+  <div class="grid md:grid-cols-3 gap-4 mt-6">
+    <!-- Balance -->
+    <UCard class="rounded-2xl">
+      <div class="flex gap-4">
+        <div
+          class="flex h-9 w-9 items-center justify-center rounded-full bg-gray-50 shrink-0"
         >
-          Back to Students
-        </UButton>
-      </div>
-      <div class="flex items-center">
-        <div class="flex items-center divide-x divide-gray-300">
-          <div class="px-1">
-            <UButton
-              v-if="student?.previous"
-              variant="link"
-              color="neutral"
-              :to="`/students/${student?.previous?.id}`"
-              icon="i-lucide-arrow-left"
-            >
-              {{
-                student?.previous?.first_yiddish_name +
-                " " +
-                student?.previous?.last_yiddish_name
-              }}
-            </UButton>
-          </div>
+          <UIcon name="i-lucide-wallet" class="size-4 text-gray-600" />
+        </div>
 
-          <div class="px-1">
-            <UButton
-              v-if="student?.next"
-              variant="link"
-              color="neutral"
-              :to="`/students/${student?.next?.id}`"
-              trailing-icon="i-lucide-arrow-right"
-            >
-              {{
-                student?.next?.first_yiddish_name +
-                " " +
-                student?.next?.last_yiddish_name
-              }}
-            </UButton>
-          </div>
+        <div class="flex-1">
+          <p class="text-sm text-gray-500 mb-1">Available Balance</p>
+          <p class="text-xl font-semibold">
+            ${{ studentPortalDummy?.balance }}
+          </p>
         </div>
       </div>
-    </div>
+    </UCard>
 
-    <div v-if="loading" class="flex items-center justify-center pt-10 w-full">
-      <BaseSpinner :show-loader="loading" size="md" />
-    </div>
-    <div
-      v-else-if="student?.Student && Object.keys(student?.Student).length > 0"
-    >
-      <UCard class="rounded-2xl shadow-sm mt-6">
-        <div class="flex items-center gap-6">
-          <UAvatar
-            size="3xl"
-            :alt="
-              student?.Student?.first_name + ' ' + student?.Student?.last_name
-            "
-          />
-
-          <div class="flex-1">
-            <div class="flex justify-between">
-              <h2 class="text-xl font-semibold">
-                {{
-                  student?.Student?.first_name +
-                  " " +
-                  student?.Student?.last_name
-                }}
-              </h2>
-              <UBadge
-                :color="student?.Student?.active === 0 ? 'error' : 'success'"
-                variant="soft"
-              >
-                {{ student?.Student?.active === 0 ? "Inactive" : "Active" }}
-              </UBadge>
-            </div>
-
-            <p class="text-sm text-gray-500">
-              {{
-                student?.Student?.first_yiddish_name +
-                " " +
-                student?.Student?.last_yiddish_name
-              }}
-            </p>
-
-            <div class="mt-2 grid grid-cols-1 gap-2 text-sm">
-              <p>
-                <span class="font-medium">Phone:</span>
-                {{ student?.Student?.phone }}
-              </p>
-              <p>
-                <span class="font-medium">Address:</span>
-                {{ student?.Student?.address }}
-              </p>
-              <p>
-                <span class="font-medium">Wage Group:</span>
-                {{ student?.wage_group }}
-              </p>
-            </div>
-            <div class="flex gap-1 mt-2 items-center">
-              <button
-                @click="handleEditClick(student?.Student)"
-                class="cursor-pointer"
-              >
-                <UIcon name="i-lucide-square-pen" class="size-5" />
-              </button>
-              <button>
-                <UIcon name="i-lucide-fingerprint-pattern" class="size-5" />
-              </button>
-              <button
-                @click="toggleStudentStatus(student?.Student)"
-                class="cursor-pointer"
-              >
-                <UIcon
-                  name="i-lucide-toggle-left"
-                  class="size-5"
-                  :class="{ 'rotate-180': student?.Student?.active === 1 }"
-                />
-              </button>
-              <button @click="handleResetPasswordClick(student?.Student)">
-                <UIcon name="i-lucide-lock-keyhole-open" class="size-5" />
-              </button>
-            </div>
-          </div>
+    <!-- % Comparison -->
+    <UCard class="rounded-2xl">
+      <div class="flex gap-4">
+        <div
+          class="flex h-9 w-9 items-center justify-center rounded-full bg-amber-50 shrink-0"
+        >
+          <UIcon name="i-lucide-percent" class="size-4 text-amber-600" />
         </div>
-      </UCard>
-
-      <div class="grid md:grid-cols-3 gap-4 my-6">
-        <!-- Account Balance -->
-        <UCard class="rounded-2xl">
-          <div class="flex gap-4">
-            <div
-              class="flex h-10 w-10 items-center justify-center rounded-full bg-primary-50 shrink-0 self-center"
-            >
-              <UIcon name="i-lucide-wallet" class="size-5 text-primary-600" />
-            </div>
-
-            <!-- Content -->
-            <div class="flex-1">
-              <p class="text-sm text-gray-500 mb-2">Account Balance</p>
-              <div class="flex justify-between items-center">
-                <p class="text-sm text-gray-600">Current</p>
-                <p class="text-xl font-semibold">${{ student?.balance }}</p>
-              </div>
-            </div>
-          </div>
-        </UCard>
-
-        <!-- Morning % -->
-        <UCard class="rounded-2xl">
-          <div class="flex gap-4">
-            <div
-              class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 shrink-0 self-center"
-            >
-              <UIcon name="i-lucide-sun" class="size-5 text-amber-600" />
-            </div>
-
-            <!-- Content -->
-            <div class="flex-1">
-              <p class="text-sm text-gray-500 mb-2">Morning %</p>
-              <div class="flex justify-between items-center mb-1">
-                <p class="text-sm text-gray-600">This Month</p>
-                <p class="text-lg font-semibold">{{ student?.percent_m }}%</p>
-              </div>
-              <div class="flex justify-between items-center">
-                <p class="text-sm text-gray-600">Last Month</p>
-                <p class="text-lg font-semibold">
-                  {{ student?.percent_m_last }}%
-                </p>
-              </div>
-            </div>
-          </div>
-        </UCard>
-
-        <!-- Afternoon % -->
-        <UCard class="rounded-2xl">
-          <div class="flex gap-4">
-            <div
-              class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 shrink-0 self-center"
-            >
-              <UIcon name="i-lucide-moon" class="size-5 text-indigo-600" />
-            </div>
-
-            <!-- Content -->
-            <div class="flex-1">
-              <p class="text-sm text-gray-500 mb-2">Afternoon %</p>
-              <div class="flex justify-between items-center mb-1">
-                <p class="text-sm text-gray-600">This Month</p>
-                <p class="text-lg font-semibold">{{ student?.percent_a }}%</p>
-              </div>
-              <div class="flex justify-between items-center">
-                <p class="text-sm text-gray-600">Last Month</p>
-                <p class="text-lg font-semibold">
-                  {{ student?.percent_a_last }}%
-                </p>
-              </div>
-            </div>
-          </div>
-        </UCard>
+        <div class="flex-1">
+          <p class="text-sm text-gray-500 mb-1">This Month vs Last</p>
+          <p
+            class="text-xl font-semibold"
+            :class="percentDiff >= 0 ? 'text-success' : 'text-error'"
+          >
+            {{ percentDiff >= 0 ? "+" : "" }}{{ percentDiff.toFixed(2) }}%
+          </p>
+        </div>
       </div>
+    </UCard>
 
-      <UTabs v-model="activeTab" :items="tabs" class="mt-6" />
-
-      <UCard v-if="activeTab === '0'">
-        <StudentCalender :items="clockingsData" />
-        <!-- <UTable
-          :columns="clockingsColumns"
-          :loading="loading"
-          :data="clockingsData"
-          class="flex-1 mt-6 max-h-112"
-          sticky
-        /> -->
-      </UCard>
-
-      <UCard v-if="activeTab === '1'">
-        <UTable
-          :columns="transactionsColumns"
-          :loading="loading"
-          :data="transactionsData"
-          class="flex-1 mt-6 max-h-112"
-          sticky
-        />
-      </UCard>
-      <UCard v-if="activeTab === '2'">
-        <UTable
-          :columns="checksColumns"
-          :loading="loading"
-          :data="checksData"
-          class="flex-1 mt-6 max-h-112"
-          sticky
-        />
-      </UCard>
-      <UCard v-if="activeTab === '3'">
-        <UTable
-          :columns="responsesColumns"
-          :loading="loading"
-          :data="responsesData"
-          class="flex-1 mt-6 max-h-112"
-          sticky
-        />
-      </UCard>
-    </div>
-
-    <div v-else>No student found</div>
-
-    <CommonStudentCreateEditModal
-      v-model="showModal"
-      :selectedStudent="selectedStudent"
-      @submit="onSubmit"
-      @cancel="handleCancel"
-    />
+    <!-- Came On Time -->
+    <UCard class="rounded-2xl">
+      <div class="flex gap-4">
+        <div
+          class="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-50 shrink-0"
+        >
+          <UIcon name="i-lucide-clock" class="size-4 text-indigo-600" />
+        </div>
+        <div class="flex-1">
+          <p class="text-sm text-gray-500 mb-1">Came On Time</p>
+          <p class="text-xl font-semibold">
+            {{ cameOnTimeThis }}%
+            <span class="text-sm text-gray-500 ml-1">
+              (Last: {{ cameOnTimeLast }}%)
+            </span>
+          </p>
+        </div>
+      </div>
+    </UCard>
   </div>
+
+  <UCard class="rounded-2xl mt-6">
+    <div class="grid grid-cols-2 gap-4">
+      <!-- This Month -->
+      <div class="flex items-center gap-3">
+        <div
+          class="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 shrink-0"
+        >
+          <UIcon
+            name="i-lucide-calendar-days"
+            class="size-4 text-emerald-600"
+          />
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">This Month</p>
+          <p class="text-lg font-semibold">{{ thisMonthPercent }}%</p>
+        </div>
+      </div>
+
+      <!-- Last Month -->
+      <div class="flex items-center gap-3">
+        <div
+          class="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 shrink-0"
+        >
+          <UIcon name="i-lucide-calendar-clock" class="size-4 text-gray-600" />
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Last Month</p>
+          <p class="text-lg font-semibold">{{ lastMonthPercent }}%</p>
+        </div>
+      </div>
+    </div>
+  </UCard>
+
+  <UCard class="rounded-2xl my-6">
+    <h3 class="font-semibold mb-4">Monthly Percentage Comparison</h3>
+
+    <div class="mx-auto max-w-xs h-96">
+      <StudentPercentPie :values="[31.25, 26]" />
+    </div>
+  </UCard>
 </template>
