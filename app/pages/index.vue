@@ -11,7 +11,6 @@ const student = useCookie("kollel_student");
 const saveOrgPin = useCookie("kollel_sys_org_pin");
 const org_pin = route?.query?.org_pin ?? saveOrgPin.value;
 const resetPasswordModal = ref(false);
-const showModal = ref(false);
 const logoUrl = ref(null);
 const orgName = ref("");
 const logoLoading = ref(true);
@@ -60,7 +59,7 @@ const fetchLogo = async () => {
   try {
     logoLoading.value = true;
     logoError.value = false;
-    
+
     const response = await api("/student-portal/logo", {
       method: "GET",
       params: { org_pin: org_pin },
@@ -212,21 +211,25 @@ const resetPassword = async (event) => {
     isSubmitting.value = false;
   }
 };
-
-const handleCancel = () => {
-  resetPasswordModal.value = false;
-};
 </script>
 
 <template>
   <!-- Error State: Invalid Organization ID -->
-  <div v-if="logoError && !logoLoading" class="min-h-screen flex items-center justify-center bg-red-50 px-4">
+  <div
+    v-if="logoError && !logoLoading"
+    class="min-h-screen flex items-center justify-center bg-red-50 px-4"
+  >
     <div class="text-center max-w-md">
       <div class="mb-6">
-        <UIcon name="i-lucide-alert-circle" class="w-16 h-16 text-red-600 mx-auto" />
+        <UIcon
+          name="i-lucide-alert-circle"
+          class="w-16 h-16 text-red-600 mx-auto"
+        />
       </div>
       <h1 class="text-3xl font-bold text-red-900 mb-2">Invalid Pin</h1>
-      <p class="text-red-700 mb-4">Unable to load! <br>Please check the URL and try again.</p>
+      <p class="text-red-700 mb-4">
+        Unable to load! <br />Please check the URL and try again.
+      </p>
       <UButton color="red" @click="fetchLogo" class="w-full">Retry</UButton>
     </div>
   </div>
@@ -234,7 +237,9 @@ const handleCancel = () => {
   <!-- Main Content: Split Layout -->
   <div v-else-if="!logoError" class="min-h-screen flex">
     <!-- Left Side: Logo Background -->
-    <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-600 to-indigo-800 items-center justify-center relative overflow-hidden">
+    <div
+      class="hidden lg:flex lg:w-1/2 bg-primary to-indigo-800 items-center justify-center relative overflow-hidden"
+    >
       <!-- Animated background blobs -->
       <div class="absolute inset-0 overflow-hidden">
         <div
@@ -250,33 +255,55 @@ const handleCancel = () => {
 
       <!-- Logo Container -->
       <div class="relative z-10 text-center px-8">
-        <div v-if="logoLoading" class="flex flex-col items-center justify-center">
-          <UIcon name="i-lucide-loader" class="w-20 h-20 text-white animate-spin mb-4" />
+        <div
+          v-if="logoLoading"
+          class="flex flex-col items-center justify-center"
+        >
+          <UIcon
+            name="i-lucide-loader"
+            class="w-20 h-20 text-white animate-spin mb-4"
+          />
           <p class="text-white text-lg">Loading...</p>
         </div>
-        <div v-else-if="logoUrl" class="flex flex-col items-center justify-center">
-          <img 
+        <div
+          v-else-if="logoUrl"
+          class="flex flex-col items-center justify-center"
+        >
+          <img
             :src="`data:image/svg+xml;base64,${logoUrl}`"
             alt="Organization Logo"
             class="max-w-xs max-h-64 object-contain drop-shadow-2xl mb-8"
           />
           <h1 class="text-white text-2xl font-bold">{{ orgName }}</h1>
-          <p class="text-indigo-100 mt-2 text-lg">Kollel System Student Portal</p>
+          <p class="text-indigo-100 mt-2 text-lg">
+            Kollel System Student Portal
+          </p>
         </div>
       </div>
     </div>
 
     <!-- Right Side: Login Form -->
-    <div class="w-full lg:w-1/2 flex items-center justify-center bg-gray-50 px-4 py-8">
+    <div
+      class="w-full lg:w-1/2 flex items-center justify-center bg-gray-50 px-4 py-8"
+    >
       <div class="w-full max-w-md">
         <!-- Mobile Logo (hidden on large screens) -->
         <div class="lg:hidden mb-8 text-center">
-          <div v-if="logoLoading" class="flex flex-col items-center justify-center">
-            <UIcon name="i-lucide-loader" class="w-12 h-12 text-indigo-600 animate-spin mb-2" />
+          <div
+            v-if="logoLoading"
+            class="flex flex-col items-center justify-center"
+          >
+            <UIcon
+              name="i-lucide-loader"
+              class="w-12 h-12 text-primary animate-spin mb-2"
+            />
           </div>
-          <div v-else-if="logoUrl" class="flex flex-col items-center justify-center">
+          <div
+            v-else-if="logoUrl"
+            class="flex flex-col items-center justify-center"
+          >
             <img
-              :src="logoUrl"
+              :src="`data:image/svg+xml;base64,${logoUrl}`"
               alt="Organization Logo"
               class="max-w-xs max-h-32 object-contain mb-4"
             />
@@ -407,7 +434,9 @@ const handleCancel = () => {
           />
         </UFormField>
 
-        <div class="flex justify-end items-center gap-2 mt-4 border-t border-gray-200 pt-4">
+        <div
+          class="flex justify-end items-center gap-2 mt-4 border-t border-gray-200 pt-4"
+        >
           <UButton
             color="neutral"
             variant="solid"
@@ -420,7 +449,7 @@ const handleCancel = () => {
             :loading="isSubmitting"
             :disabled="isSubmitting"
           >
-            {{ confirmCode ? 'Verify Code' : 'Send Code' }}
+            {{ confirmCode ? "Verify Code" : "Send Code" }}
           </UButton>
         </div>
       </UForm>
