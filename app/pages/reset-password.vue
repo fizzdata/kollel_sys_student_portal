@@ -48,7 +48,7 @@ const onSubmit = async (event) => {
       org_pin: org_pin,
       ...event.data,
     };
-    const endpoint = `/student-portal/password-reset`;
+    const endpoint = `/student-portal/password-reset/1`;
 
     console.log("event", event.data);
 

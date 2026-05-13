@@ -9,9 +9,16 @@ const loading = ref(false);
 const balance = ref(null);
 const transaction = ref([]);
 const generateChecksModal = ref(false);
+const transferModal = ref(false);
 const isSubmitting = ref(false);
+const isTransferSubmitting = ref(false);
 const toast = useToast();
 const payeeOptions = ref([]);
+const transferStudentOptions = ref([]);
+const currentPage = ref(1);
+const pageSize = ref(25);
+const totalTransactions = ref(0);
+const totalPages = ref(1);
 
 const { $printJS } = useNuxtApp();
 
@@ -41,19 +48,82 @@ const schema = yup.object({
   memo: yup.string().nullable().max(255, "Memo must not exceed 255 characters"),
 });
 
-const fetchTransactions = async () => {
+const transferState = reactive({
+  transfer_to_student_id: "",
+  amount: "",
+  memo: "",
+});
+
+const transferSchema = yup.object({
+  transfer_to_student_id: yup
+    .number()
+    .typeError("Student is required")
+    .required("Student is required")
+    .integer("Student must be an integer"),
+
+  amount: yup
+    .number()
+    .typeError("Amount is required")
+    .required("Amount is required")
+    .min(0.01, "Amount must be at least 0.01"),
+
+  memo: yup.string().nullable().max(255, "Memo must not exceed 255 characters"),
+});
+
+const resetTransferForm = () => {
+  transferState.transfer_to_student_id = "";
+  transferState.amount = "";
+  transferState.memo = "";
+};
+
+const fetchTransactionSetup = async () => {
   try {
-    loading.value = true;
     const response = await api(`/student-portal/transactions`);
 
     if (response?.success) {
-      transaction.value = response?.transaction || [];
       balance.value = response?.ballance || "0";
       payeeOptions.value = response.payees.map((payee) => ({
         label: payee.name,
         value: payee.id,
         memo: payee.default_memo,
       }));
+      transferStudentOptions.value = (response.transfer_students || []).map(
+        (student) => ({
+          label:
+            `${student.first_yiddish_name} ${student.last_yiddish_name || ""}`.trim(),
+          value: student.id,
+        }),
+      );
+    } else {
+      toast.add({
+        title: "Error",
+        description: response?.message || "Failed to fetch transaction setup",
+        color: "error",
+      });
+    }
+  } catch (error) {
+    console.error("Setup fetch error:", error);
+    toast.add({
+      title: "Error",
+      description: "An unexpected error occurred while fetching setup data",
+      color: "error",
+    });
+  }
+};
+
+const fetchTransactions = async (page = currentPage.value) => {
+  try {
+    loading.value = true;
+    const response = await api(
+      `/student-portal/transactions/list?page=${page}&page_size=${pageSize.value}`,
+    );
+
+    if (response?.success) {
+      currentPage.value = Number(response?.page || page || 1);
+      pageSize.value = Number(response?.page_size || pageSize.value);
+      totalTransactions.value = Number(response?.total_transactions || 0);
+      totalPages.value = Number(response?.total_pages || 1);
+      transaction.value = response?.transaction || [];
     } else {
       toast.add({
         title: "Error",
@@ -71,6 +141,16 @@ const fetchTransactions = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const goToPreviousPage = async () => {
+  if (currentPage.value <= 1 || loading.value) return;
+  await fetchTransactions(currentPage.value - 1);
+};
+
+const goToNextPage = async () => {
+  if (currentPage.value >= totalPages.value || loading.value) return;
+  await fetchTransactions(currentPage.value + 1);
 };
 const onSubmit = async (event) => {
   try {
@@ -94,7 +174,8 @@ const onSubmit = async (event) => {
         base64: true,
       });
 
-      fetchTransactions();
+      await fetchTransactionSetup();
+      await fetchTransactions();
       generateChecksModal.value = false;
     } else {
       toast.add({
@@ -116,7 +197,48 @@ const onSubmit = async (event) => {
     generateCheckResetForm();
   }
 };
+
+const onTransferSubmit = async (event) => {
+  try {
+    isTransferSubmitting.value = true;
+    const response = await api(`/student-portal/transfer`, {
+      method: "POST",
+      body: event.data,
+    });
+
+    if (response?.success) {
+      toast.add({
+        title: "Success",
+        description: response?.message || "Transfer completed",
+        color: "success",
+        duration: 2000,
+      });
+
+      await fetchTransactionSetup();
+      await fetchTransactions();
+      transferModal.value = false;
+    } else {
+      toast.add({
+        title: "Error",
+        description: response?.message || "Failed to transfer",
+        color: "error",
+      });
+    }
+  } catch (error) {
+    console.error("Transfer error:", error);
+    toast.add({
+      title: "Error",
+      description: "An unexpected error occurred while transferring",
+      color: "error",
+    });
+  } finally {
+    isTransferSubmitting.value = false;
+    transferModal.value = false;
+    resetTransferForm();
+  }
+};
 onMounted(async () => {
+  await fetchTransactionSetup();
   await fetchTransactions();
 });
 
@@ -135,11 +257,7 @@ function money(amount) {
 }
 
 const deposit = (amount) => {
-  if (amount >= 0) {
-    return money(amount);
-  } else {
-    return "-";
-  }
+  return money(Number(amount || 0));
 };
 
 const columns = [
@@ -167,6 +285,20 @@ const columns = [
   {
     accessorKey: "description",
     header: "Description",
+    meta: {
+      class: {
+        th: "w-[45%]",
+      },
+    },
+    cell: ({ row }) =>
+      h(
+        "div",
+        {
+          class:
+            "whitespace-normal break-words leading-snug max-w-[20rem] md:max-w-[30rem]",
+        },
+        row.original.description || "-",
+      ),
   },
   {
     accessorKey: "amount",
@@ -178,6 +310,16 @@ const columns = [
     },
     cell: ({ row }) => deposit(row.original.amount),
   },
+  {
+    accessorKey: "running_balance",
+    header: "Balance",
+    meta: {
+      class: {
+        th: "w-24",
+      },
+    },
+    cell: ({ row }) => money(row.original.running_balance || 0),
+  },
 ];
 
 const handleChange = (event) => {
@@ -186,7 +328,8 @@ const handleChange = (event) => {
 };
 </script>
 <template>
-  <UCard class="rounded-2xl shadow-sm">
+  <div>
+    <UCard class="rounded-2xl shadow-sm">
     <div
       class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
     >
@@ -204,24 +347,52 @@ const handleChange = (event) => {
         </div> -->
       </div>
 
-      <!-- Action Button -->
-      <UButton
-        @click="generateChecksModal = true"
-        icon="i-lucide-circle-check-big"
-        label="Create Check"
-        size="lg"
-        class="self-start sm:self-auto"
-      />
+      <div class="flex gap-2 self-start sm:self-auto">
+        <UButton
+          @click="transferModal = true"
+          icon="i-lucide-arrow-right-left"
+          label="Transfer"
+          size="lg"
+        />
+        <UButton
+          @click="generateChecksModal = true"
+          icon="i-lucide-circle-check-big"
+          label="Create Check"
+          size="lg"
+        />
+      </div>
     </div>
-  </UCard>
+    </UCard>
 
-  <UCard class="my-8 rounded-2xl">
+    <UCard class="my-8 rounded-2xl">
     <UTable
       :columns="columns"
       :loading="loading"
       :data="transaction"
       class="flex-1 mt-6"
     />
+
+    <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+      <p class="text-sm text-gray-600">
+        Page {{ currentPage }} of {{ totalPages }}
+        ({{ totalTransactions }} transactions)
+      </p>
+
+      <div class="flex items-center gap-2">
+        <UButton
+          label="Previous"
+          variant="outline"
+          :disabled="loading || currentPage <= 1"
+          @click="goToPreviousPage"
+        />
+        <UButton
+          label="Next"
+          variant="outline"
+          :disabled="loading || currentPage >= totalPages"
+          @click="goToNextPage"
+        />
+      </div>
+    </div>
 
     <!-- <div class="overflow-x-auto">
       <table class="min-w-full table-fixed w-full border-collapse">
@@ -272,10 +443,10 @@ const handleChange = (event) => {
         </tbody>
       </table>
     </div> -->
-  </UCard>
+    </UCard>
 
   <!-- Modal for Generate Checks -->
-  <UModal v-model:open="generateChecksModal">
+    <UModal v-model:open="generateChecksModal">
     <!-- Custom Header -->
     <template #header>
       <div class="flex justify-between w-full">
@@ -361,5 +532,97 @@ const handleChange = (event) => {
         </UForm>
       </div>
     </template>
-  </UModal>
+    </UModal>
+
+  <!-- Modal for Transfer -->
+    <UModal
+      :open="transferModal"
+      @update:open="(value) => (transferModal = value)"
+    >
+    <template #header>
+      <div class="flex justify-between w-full">
+        <h2 class="text-xl font-bold text-primary">Transfer To Student</h2>
+
+        <UButton
+          size="sm"
+          variant="outline"
+          color="primary"
+          class="rounded-full p-2"
+          icon="i-lucide-x"
+          @click="
+            () => {
+              transferModal = false;
+              resetTransferForm();
+            }
+          "
+        >
+        </UButton>
+      </div>
+    </template>
+
+    <template #body>
+      <div>
+        <UForm
+          :schema="transferSchema"
+          :state="transferState"
+          class="space-y-4"
+          @submit="onTransferSubmit"
+        >
+          <div class="flex flex-col gap-4">
+            <UFormField label="Student" name="transfer_to_student_id">
+              <USelect
+                v-model="transferState.transfer_to_student_id"
+                :items="transferStudentOptions"
+                placeholder="Please Select"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField label="Amount" name="amount">
+              <UInput
+                v-model="transferState.amount"
+                placeholder="Enter amount"
+                class="w-full"
+                size="lg"
+              />
+            </UFormField>
+
+            <UFormField label="Memo" name="memo">
+              <UInput
+                v-model="transferState.memo"
+                placeholder="Enter memo"
+                class="w-full"
+                size="lg"
+              />
+            </UFormField>
+          </div>
+
+          <div
+            class="flex justify-end items-center gap-2 mt-4 border-t border-gray-200 pt-4"
+          >
+            <UButton
+              color="neutral"
+              variant="solid"
+              @click="
+                () => {
+                  transferModal = false;
+                  resetTransferForm();
+                }
+              "
+            >
+              Cancel
+            </UButton>
+            <UButton
+              type="submit"
+              :loading="isTransferSubmitting"
+              :disabled="isTransferSubmitting"
+            >
+              Confirm
+            </UButton>
+          </div>
+        </UForm>
+      </div>
+    </template>
+    </UModal>
+  </div>
 </template>
