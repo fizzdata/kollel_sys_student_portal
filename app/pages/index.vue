@@ -65,7 +65,7 @@ const fetchLogo = async () => {
       params: { org_pin: org_pin },
     });
 
-    if (response?.success && response?.logo) {
+    if (response?.success) {
       logoUrl.value = response.logo;
       orgName.value = response.org_name;
     } else {
@@ -149,6 +149,13 @@ const onSubmit = async (event) => {
 };
 
 const resetPassword = async (event) => {
+  const apiMessage = (response, fallback) =>
+    response?._data?.errors ||
+    response?._data?.message ||
+    response?.data?.message ||
+    response?.message ||
+    fallback;
+
   try {
     if (!org_pin) {
       toast.add({
@@ -171,7 +178,11 @@ const resetPassword = async (event) => {
       payload.code = event.data.code;
     }
 
-    const response = await api("/student-portal/password-reset", {
+    const endpoint = confirmCode.value
+      ? "/student-portal/password-reset/2"
+      : "/student-portal/password-reset/1";
+
+    const response = await api(endpoint, {
       method: "POST",
       body: payload,
     });
@@ -182,14 +193,14 @@ const resetPassword = async (event) => {
         resetPasswordState.phone = event?.data?.phone;
         toast.add({
           title: "Success",
-          description: response?.message || "Code Sent!",
+          description: apiMessage(response, "Code Sent!"),
           color: "success",
           duration: 2000,
         });
       } else {
         toast.add({
           title: "Success",
-          description: response?.message || "Password Reset!",
+          description: apiMessage(response, "Password Reset!"),
           color: "success",
           duration: 2000,
         });
@@ -200,7 +211,7 @@ const resetPassword = async (event) => {
     } else {
       toast.add({
         title: "Failed",
-        description: response?._data.message || "Code Sending Failed",
+        description: apiMessage(response, "Code Sending Failed"),
         color: "error",
         duration: 2000,
       });
@@ -317,9 +328,7 @@ const resetPassword = async (event) => {
               Kollel System
             </h2>
             <p class="text-sm text-gray-600 mt-1">Student Portal</p>
-            <ULink to="http://fizzdata.com/" target="_blank" class="block">
               <p class="mt-2 text-xs text-gray-500">by Fizz Data</p>
-            </ULink>
           </div>
 
           <!-- Title -->

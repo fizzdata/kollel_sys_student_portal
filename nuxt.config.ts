@@ -7,7 +7,7 @@ export default defineNuxtConfig({
   app: {
     baseURL: '/',
     head: {
-      title: 'KollelSys Admin',
+      title: 'KollelSys Student',
       charset: 'utf-8',
       viewport: 'width=device-width, initial-scale=1',
       link: [
@@ -31,7 +31,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Expose public environment variables to both client and server
     public: {
-      API_URL: process.env.API_URL || 'http://127.0.0.1:8000/api', // 'https://kollelsys.fizzdata.com', //http://127.0.0.1:8000/
+    //  API_URL: process.env.API_URL || 'https://kollelsys.com/api',
+      API_URL: process.env.API_URL || 'http://127.0.0.1:8000/api',
     },
   },
   ui: {

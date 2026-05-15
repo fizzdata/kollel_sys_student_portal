@@ -1,6 +1,5 @@
 <script setup>
-import { object, string } from "yup";
-
+import * as yup from "yup";
 definePageMeta({
   layout: false,
 });
@@ -10,16 +9,20 @@ const toast = useToast();
 const isSubmitting = ref(false);
 const route = useRoute();
 const org_pin = route.query.org_pin;
-const schema = object({
-  current: string()
+const schema = yup.object({
+  current: yup
+    .string()
     .min(8, "Must be at least 8 characters")
     .required("Password is required"),
-  password: string()
+
+  password: yup
+    .string()
     .min(8, "Must be at least 8 characters")
     .required("Password is required"),
+
   confirmed: yup
     .string()
-    .oneOf([yup.ref("password")], "Passwords must match") // ✅ Remove `null`
+    .oneOf([yup.ref("password")], "Passwords must match")
     .required("Confirm Password is required"),
 });
 

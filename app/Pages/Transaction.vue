@@ -28,7 +28,7 @@ const state = reactive({
   memo: "",
 });
 const generateCheckResetForm = () => {
-  state.payee = "";
+  state.payee = null;
   state.amount = "";
   state.memo = "";
 };
@@ -49,7 +49,7 @@ const schema = yup.object({
 });
 
 const transferState = reactive({
-  transfer_to_student_id: "",
+  transfer_to_student_id: null,
   amount: "",
   memo: "",
 });
@@ -71,7 +71,7 @@ const transferSchema = yup.object({
 });
 
 const resetTransferForm = () => {
-  transferState.transfer_to_student_id = "";
+  transferState.transfer_to_student_id = null;
   transferState.amount = "";
   transferState.memo = "";
 };
@@ -82,18 +82,15 @@ const fetchTransactionSetup = async () => {
 
     if (response?.success) {
       balance.value = response?.ballance || "0";
-      payeeOptions.value = response.payees.map((payee) => ({
-        label: payee.name,
-        value: payee.id,
-        memo: payee.default_memo,
-      }));
-      transferStudentOptions.value = (response.transfer_students || []).map(
-        (student) => ({
-          label:
-            `${student.first_yiddish_name} ${student.last_yiddish_name || ""}`.trim(),
-          value: student.id,
-        }),
-      );
+      payeeOptions.value = (response.payees || []).map((payee) => ({
+  label: payee.name,
+  value: payee.id,
+  memo: payee.default_memo
+}))
+      transferStudentOptions.value = (response.transfer_students || []).map((s) => ({
+  label: `${s.first_yiddish_name} ${s.last_yiddish_name || ""}`.trim(),
+  value: s.id
+}));
     } else {
       toast.add({
         title: "Error",
@@ -323,8 +320,10 @@ const columns = [
 ];
 
 const handleChange = (event) => {
-  const data = payeeOptions.value.find((item) => item.value === event);
-  state.memo = data?.memo;
+  const selectedValue =
+    event && typeof event === "object" ? event.value : event;
+  const data = payeeOptions.value.find((item) => item.value === selectedValue);
+  state.memo = data?.memo || "";
 };
 </script>
 <template>
@@ -479,15 +478,18 @@ const handleChange = (event) => {
           @submit="onSubmit"
         >
           <div class="flex flex-col gap-4">
-            <UFormField label="Payee" name="payee">
-              <USelect
-                v-model="state.payee"
-                :items="payeeOptions"
-                placeholder="Please Select"
-                class="w-full"
-                @update:model-value="handleChange"
-              />
-            </UFormField>
+           <UFormField label="Payee" name="payee">
+  <USelectMenu
+  v-model="state.payee"
+    :items="payeeOptions"
+    value-key="value"
+    label-key="label"
+  placeholder="Please Select"
+  searchable
+  class="w-full"
+  @update:model-value="handleChange"
+/>
+</UFormField>
             <UFormField label="Amount" name="amount">
               <UInput
                 v-model="state.amount"
@@ -502,7 +504,6 @@ const handleChange = (event) => {
                 placeholder="Enter memo"
                 class="w-full"
                 size="lg"
-                readonly
               />
             </UFormField>
           </div>
@@ -569,14 +570,17 @@ const handleChange = (event) => {
           @submit="onTransferSubmit"
         >
           <div class="flex flex-col gap-4">
-            <UFormField label="Student" name="transfer_to_student_id">
-              <USelect
-                v-model="transferState.transfer_to_student_id"
-                :items="transferStudentOptions"
-                placeholder="Please Select"
-                class="w-full"
-              />
-            </UFormField>
+           <UFormField label="Student" name="transfer_to_student_id">
+  <USelectMenu
+  v-model="transferState.transfer_to_student_id"
+    :items="transferStudentOptions"
+    value-key="value"
+    label-key="label"
+  placeholder="Please Select"
+  searchable
+  class="w-full"
+/>
+</UFormField>
 
             <UFormField label="Amount" name="amount">
               <UInput

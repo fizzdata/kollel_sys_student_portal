@@ -41,6 +41,14 @@ const schema = computed(() =>
       : yup.string().notRequired(),
   }),
 );
+
+const apiMessage = (response, fallback) =>
+  response?._data?.errors ||
+  response?._data?.message ||
+  response?.data?.message ||
+  response?.message ||
+  fallback;
+
 const onSubmit = async (event) => {
   try {
     if (!org_pin) {
@@ -59,7 +67,9 @@ const onSubmit = async (event) => {
       org_pin: org_pin,
       ...event.data,
     };
-    const endpoint = `/student-portal/password-reset`;
+    const endpoint = confirmCode.value
+      ? `/student-portal/password-reset/2`
+      : `/student-portal/password-reset/1`;
 
     console.log("event", event.data);
 
@@ -74,7 +84,7 @@ const onSubmit = async (event) => {
       state.phone = event?.data?.phone;
       toast.add({
         title: "Success",
-        description: response?.message || "Code Sent!",
+        description: apiMessage(response, "Code Sent!"),
         color: "success",
         duration: 2000,
       });
@@ -83,7 +93,7 @@ const onSubmit = async (event) => {
     } else {
       toast.add({
         title: "Failed",
-        description: response?.message || "Code Sending Failed",
+        description: apiMessage(response, "Code Sending Failed"),
         color: "error",
         duration: 2000,
       });
