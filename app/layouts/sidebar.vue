@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import { useRoute } from "vue-router";
 import {
   Dialog,
@@ -20,6 +20,16 @@ const token = useCookie("kollel_stundent_token");
 const student = useCookie("kollel_student");
 const org_pin = useCookie("kollel_sys_org_pin");
 
+const inactivityWarningOpen = ref(false);
+const inactivityCountdown = ref(10);
+const isLoggingOut = ref(false);
+
+const IDLE_TIMEOUT_MS = 30_000;
+const WARNING_SECONDS = 10;
+
+let inactivityTimer = null;
+let countdownTimer = null;
+
 const toast = useToast();
 const navigation = [
   { name: "Dashboard", href: "/dashboard", key: "dashboard" },
@@ -30,8 +40,70 @@ const navigation = [
 
 const isActive = (href) => route.path.startsWith(href);
 
-const logout = async () => {
+const clearInactivityTimer = () => {
+  if (inactivityTimer) {
+    window.clearTimeout(inactivityTimer);
+    inactivityTimer = null;
+  }
+};
+
+const clearCountdownTimer = () => {
+  if (countdownTimer) {
+    window.clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+};
+
+const startInactivityTimer = () => {
+  if (!token.value || !process.client) return;
+
+  clearInactivityTimer();
+  inactivityTimer = window.setTimeout(() => {
+    inactivityWarningOpen.value = true;
+    inactivityCountdown.value = WARNING_SECONDS;
+
+    clearCountdownTimer();
+    countdownTimer = window.setInterval(() => {
+      inactivityCountdown.value -= 1;
+
+      if (inactivityCountdown.value <= 0) {
+        clearCountdownTimer();
+        inactivityWarningOpen.value = false;
+        logout(true);
+      }
+    }, 1000);
+  }, IDLE_TIMEOUT_MS);
+};
+
+const onUserActivity = () => {
+  if (inactivityWarningOpen.value) return;
+  startInactivityTimer();
+};
+
+const resumeSession = () => {
+  inactivityWarningOpen.value = false;
+  inactivityCountdown.value = WARNING_SECONDS;
+  clearCountdownTimer();
+  startInactivityTimer();
+};
+
+const logout = async (isAutoLogout = false) => {
+  if (isLoggingOut.value) return;
+  isLoggingOut.value = true;
+
+  clearInactivityTimer();
+  clearCountdownTimer();
+
   try {
+    if (isAutoLogout) {
+      toast.add({
+        title: "Session Expiring",
+        description: "You were logged out due to inactivity.",
+        color: "warning",
+        timeout: 2000,
+      });
+    }
+
     // Send the full sign-up data to the server
     const response = await api("/student-portal/logout", {
       method: "POST",
@@ -66,8 +138,46 @@ const logout = async () => {
     // Redirect or show a success message
   } catch (error) {
     console.error("Error during sign-up:", error);
+  } finally {
+    isLoggingOut.value = false;
   }
 };
+
+onMounted(() => {
+  if (!process.client || !token.value) return;
+
+  const events = ["mousemove", "mousedown", "keydown", "scroll", "touchstart"];
+  events.forEach((eventName) => {
+    window.addEventListener(eventName, onUserActivity, { passive: true });
+  });
+
+  startInactivityTimer();
+});
+
+onBeforeUnmount(() => {
+  if (process.client) {
+    const events = ["mousemove", "mousedown", "keydown", "scroll", "touchstart"];
+    events.forEach((eventName) => {
+      window.removeEventListener(eventName, onUserActivity);
+    });
+  }
+
+  clearInactivityTimer();
+  clearCountdownTimer();
+});
+
+watch(token, (value) => {
+  if (!process.client) return;
+
+  if (!value) {
+    inactivityWarningOpen.value = false;
+    clearInactivityTimer();
+    clearCountdownTimer();
+    return;
+  }
+
+  startInactivityTimer();
+});
 </script>
 
 <template>
@@ -144,5 +254,24 @@ const logout = async () => {
     <main class="max-w-7xl mx-auto mt-5 w-full px-6 lg:px-8">
       <slot />
     </main>
+
+    <UModal v-model:open="inactivityWarningOpen" :dismissible="false">
+      <template #header>
+        <h2 class="text-lg font-semibold">Session Timeout Warning</h2>
+      </template>
+
+      <template #body>
+        <p class="text-sm text-gray-700">
+          You have been inactive for 30 seconds. You will be logged out in
+          {{ inactivityCountdown }} seconds.
+        </p>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end w-full">
+          <UButton color="primary" @click="resumeSession">I am still here</UButton>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

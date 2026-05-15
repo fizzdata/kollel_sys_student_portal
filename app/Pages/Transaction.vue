@@ -27,10 +27,12 @@ const state = reactive({
   amount: "",
   memo: "",
 });
+const isDefaultMemoLocked = ref(false);
 const generateCheckResetForm = () => {
   state.payee = null;
   state.amount = "";
   state.memo = "";
+  isDefaultMemoLocked.value = false;
 };
 const schema = yup.object({
   payee: yup
@@ -323,7 +325,10 @@ const handleChange = (event) => {
   const selectedValue =
     event && typeof event === "object" ? event.value : event;
   const data = payeeOptions.value.find((item) => item.value === selectedValue);
-  state.memo = data?.memo || "";
+  const defaultMemo = data?.memo || "";
+
+  state.memo = defaultMemo;
+  isDefaultMemoLocked.value = defaultMemo.trim().length > 0;
 };
 </script>
 <template>
@@ -504,6 +509,7 @@ const handleChange = (event) => {
                 placeholder="Enter memo"
                 class="w-full"
                 size="lg"
+                :readonly="isDefaultMemoLocked"
               />
             </UFormField>
           </div>

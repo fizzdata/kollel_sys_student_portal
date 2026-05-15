@@ -31,8 +31,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Expose public environment variables to both client and server
     public: {
-    //  API_URL: process.env.API_URL || 'https://kollelsys.com/api',
-      API_URL: process.env.API_URL || 'http://127.0.0.1:8000/api',
+      API_URL: process.env.API_URL || 'https://kollelsys.com/api',
+    //  API_URL: process.env.API_URL || 'http://127.0.0.1:8000/api',
     },
   },
   ui: {
