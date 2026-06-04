@@ -14,6 +14,13 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  monthPercentages: {
+    type: Object,
+    default: () => ({
+      morning: { percent: 0, error_date: "" },
+      afternoon: { percent: 0, error_date: "" },
+    }),
+  },
   pendingRequests: {
     type: Array,
     default: () => [],
@@ -36,6 +43,22 @@ function notifyRange() {
     currentRange.value = { from: firstDate.value, to: lastDate.value };
     emit("reload", currentRange.value);
   }
+}
+
+function formatPercent(value) {
+  const numericValue = Number(value);
+
+  if (!Number.isFinite(numericValue)) {
+    return "0%";
+  }
+
+  const roundedValue = Math.round(numericValue * 100) / 100;
+
+  if (roundedValue < 0) {
+    return "N/A";
+  }
+
+  return `${numericValue.toFixed(2).replace(/\.00$/, "")}%`;
 }
 
 const editClockingModal = ref(false);
@@ -65,16 +88,126 @@ const resetForm = () => {
   state.notes = null;
 };
 
+function getClockingMeta(clock, type) {
+  const isMorning = type === "morning";
+  const prefix = isMorning ? "morning" : "afternoon";
+
+  return {
+    id: clock?.[`${prefix}_id`] ?? clock?.id ?? clock?.clocking_id ?? null,
+    day: clock?.[`${prefix}_day`] ?? clock?.day ?? null,
+    session: clock?.[`${prefix}_session`] ?? clock?.session ?? null,
+  };
+}
+
+function getSessionEntries(dayData, type) {
+  if (!dayData) return [];
+
+  const isMorning = type === "morning";
+  const prefix = isMorning ? "morning" : "afternoon";
+  const sessionNumber = isMorning ? 1 : 2;
+  const totalKey = isMorning ? "total_morning" : "total_afternoon";
+
+  const rawClockings = dayData?.clocking;
+  const normalizedClockings = Array.isArray(rawClockings)
+    ? rawClockings
+    : rawClockings && typeof rawClockings === "object"
+      ? Object.values(rawClockings)
+      : null;
+
+  if (normalizedClockings) {
+    return normalizedClockings
+      .filter((entry) => Number(entry?.session) === sessionNumber)
+      .map((entry) => ({
+        ...entry,
+        [`${prefix}_id`]: entry?.[`${prefix}_id`] ?? entry?.id ?? entry?.clocking_id ?? null,
+        [`${prefix}_day`]:
+          entry?.[`${prefix}_day`] ?? entry?.day ?? dayData?.[`${prefix}_day`] ?? dayData?.day ?? null,
+        [`${prefix}_session`]:
+          entry?.[`${prefix}_session`] ??
+          entry?.session ??
+          dayData?.[`${prefix}_session`] ??
+          dayData?.session ??
+          sessionNumber,
+        [`${prefix}_session_id`]:
+          entry?.[`${prefix}_session_id`] ??
+          entry?.session_id ??
+          dayData?.[`${prefix}_session_id`] ??
+          dayData?.session_id ??
+          null,
+        [`${prefix}_in`]: entry?.[`${prefix}_in`] ?? entry?.in ?? "-",
+        [`${prefix}_out`]: entry?.[`${prefix}_out`] ?? entry?.out ?? "-",
+        [totalKey]:
+          entry?.[totalKey] ??
+          entry?.total ??
+          entry?.schedule_total ??
+          dayData?.[totalKey] ??
+          dayData?.schedule_total ??
+          "-",
+      }));
+  }
+
+  const candidates = [
+    dayData?.[`${prefix}_clockings`],
+    dayData?.[`${prefix}_entries`],
+    dayData?.[`${prefix}_records`],
+    dayData?.[prefix],
+  ];
+
+  const entries = candidates.find(Array.isArray);
+
+  if (!entries) {
+    return [dayData];
+  }
+
+  return entries.map((entry) => ({
+    ...entry,
+    [`${prefix}_id`]: entry?.[`${prefix}_id`] ?? entry?.id ?? entry?.clocking_id ?? null,
+    [`${prefix}_day`]:
+      entry?.[`${prefix}_day`] ?? entry?.day ?? dayData?.[`${prefix}_day`] ?? dayData?.day ?? null,
+    [`${prefix}_session`]:
+      entry?.[`${prefix}_session`] ??
+      entry?.session ??
+      dayData?.[`${prefix}_session`] ??
+      dayData?.session ??
+      null,
+    [`${prefix}_session_id`]:
+      entry?.[`${prefix}_session_id`] ??
+      entry?.session_id ??
+      dayData?.[`${prefix}_session_id`] ??
+      dayData?.session_id ??
+      null,
+    [`${prefix}_in`]: entry?.[`${prefix}_in`] ?? entry?.in ?? "-",
+    [`${prefix}_out`]: entry?.[`${prefix}_out`] ?? entry?.out ?? "-",
+  }));
+}
+
+function getEntryTotal(entry, type, dayData) {
+  const isMorning = type === "morning";
+  const totalKey = isMorning ? "total_morning" : "total_afternoon";
+  const rawTotal = entry?.[totalKey] ?? entry?.total ?? dayData?.[totalKey] ?? "-";
+
+  if (rawTotal === null || rawTotal === undefined) {
+    return "-";
+  }
+
+  const totalText = String(rawTotal).trim();
+  const totalNumeric = Number(totalText);
+
+  if (
+    /^-0(?:\.0+)?$/.test(totalText) ||
+    Object.is(totalNumeric, -0) ||
+    (Number.isFinite(totalNumeric) && totalNumeric < 0 && Math.abs(totalNumeric) < 0.005)
+  ) {
+    return "N/A";
+  }
+
+  return rawTotal;
+}
+
 const editClick = (current, type) => {
   console.log("🚀 ~ editClick ~ current:", current);
 
-  const isMorning = type === "morning";
-
-  const prefix = isMorning ? "morning" : "afternoon";
-
-  let id = current[`${prefix}_id`];
-  let day = current[`${prefix}_day`];
-  let session = current[`${prefix}_session`];
+  const { id, day, session } = getClockingMeta(current, type);
 
   if (is_editable(id, day, session) === "p") {
     toast.add({
@@ -99,13 +232,7 @@ const checkStatus = (current, type) => [];
 const deletePending = (clock, type) => {
   console.log("🚀 ~ deletePending ~ clock:", clock);
 
-  const isMorning = type === "morning";
-
-  const prefix = isMorning ? "morning" : "afternoon";
-
-  let id = clock[`${prefix}_id`];
-  let day = clock[`${prefix}_day`];
-  let session = clock[`${prefix}_session`];
+  const { id, day, session } = getClockingMeta(clock, type);
 
   const pendingId = props.pendingRequests.find((request) => {
     if (id === null) {
@@ -122,13 +249,7 @@ const deletePending = (clock, type) => {
 };
 
 function button_text(current, type) {
-  const isMorning = type === "morning";
-
-  const prefix = isMorning ? "morning" : "afternoon";
-
-  let id = current[`${prefix}_id`];
-  let day = current[`${prefix}_day`];
-  let session = current[`${prefix}_session`];
+  const { id, day, session } = getClockingMeta(current, type);
 
   const status = is_editable(id, day, session);
   console.log("🚀 ~ button_text ~ status:", status);
@@ -142,7 +263,7 @@ function button_text(current, type) {
 
   if (status === "l") {
     return h(UIcon, {
-      src: "la:lock",
+      name: "la:lock",
       class: "w-5 h-5 text-gray-500",
     });
   }
@@ -169,7 +290,7 @@ const confirmDeletePending = async () => {
         color: "success",
         duration: 2000,
       });
-      emit("reload");
+      emit("reload", currentRange.value);
     } else if (response?._data?.message) {
       toast.add({
         title: "Failed",
@@ -203,19 +324,20 @@ const editClocking = (clock, type) => {
   const prefix = isMorning ? "morning" : "afternoon";
 
   state.in =
-    clock[`${prefix}_in`] === "-"
+    (clock?.[`${prefix}_in`] ?? clock?.in) === "-"
       ? null
-      : convertTo24Hour(clock[`${prefix}_in`]);
+      : convertTo24Hour(clock?.[`${prefix}_in`] ?? clock?.in);
 
   state.out =
-    clock[`${prefix}_out`] === "-"
+    (clock?.[`${prefix}_out`] ?? clock?.out) === "-"
       ? null
-      : convertTo24Hour(clock[`${prefix}_out`]);
+      : convertTo24Hour(clock?.[`${prefix}_out`] ?? clock?.out);
 
-  state.id = clock[`${prefix}_id`];
-  state.day = clock[`${prefix}_day`];
-  state.session = clock[`${prefix}_session`];
-  state.session_id = clock[`${prefix}_session_id`];
+  state.id = clock?.[`${prefix}_id`] ?? clock?.id ?? null;
+  state.day = clock?.[`${prefix}_day`] ?? clock?.day ?? null;
+  state.session = clock?.[`${prefix}_session`] ?? clock?.session ?? null;
+  state.session_id =
+    clock?.[`${prefix}_session_id`] ?? clock?.session_id ?? null;
 
   state.retzifus = isMorning
     ? clock.retzifus_morning !== "NO"
@@ -241,7 +363,11 @@ const hebrewMonthNames = [
 ];
 
 function formatDate(date) {
-  return date.toISOString().split("T")[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function hebrew_date_array(date) {
@@ -251,6 +377,7 @@ function hebrew_date_array(date) {
 }
 
 const hebrewToday = hebrew_date_array(today);
+const todayDate = formatDate(today);
 const hYear = ref(hebrewToday.year);
 const hMonth = ref(hebrewToday.month);
 
@@ -263,7 +390,13 @@ function findFirstHebrewMonthDay() {
 }
 
 function getDataForDay(day) {
-  return props?.items?.find((i) => i.day === day) || null;
+  const items = Array.isArray(props?.items)
+    ? props.items
+    : props?.items && typeof props.items === "object"
+      ? Object.values(props.items)
+      : [];
+
+  return items.find((i) => i?.day === day) || null;
 }
 
 function generateCalendar() {
@@ -381,13 +514,15 @@ const onSubmit = async (event) => {
       toast.add({
         title: "Success",
         description: h("span", {
-          innerHTML: response?.message || "Schedule updated successfully",
+          innerHTML: response?.message || "Clocking updated successfully",
         }),
         color: "success",
         duration: 2000,
       });
-
-      emit("reload");
+      editClockingModal.value = false;
+      isSubmitting.value = false;
+      resetForm();
+      emit("reload", currentRange.value);
     } else if (response?._data?.message) {
       toast.add({
         title: "Failed",
@@ -415,9 +550,7 @@ const onSubmit = async (event) => {
       color: "error",
     });
   } finally {
-    editClockingModal.value = false;
     isSubmitting.value = false;
-    resetForm();
   }
 };
 
@@ -426,7 +559,8 @@ watch(() => props.items, generateCalendar, { deep: true });
 </script>
 
 <template>
-  <div class="calendar">
+  <div>
+    <div class="calendar">
     <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
       <UButton
         @click="prevMonth"
@@ -436,9 +570,25 @@ watch(() => props.items, generateCalendar, { deep: true });
       >
         Previous
       </UButton>
-      <h2 class="text-2xl font-bold text-gray-900 text-center flex-1">
-        {{ month_year() }}
-      </h2>
+      <div class="flex-1 text-center">
+        <h2 class="text-2xl font-bold text-gray-900">
+          {{ month_year() }}
+        </h2>
+        <div class="mt-3 flex justify-center gap-3 flex-wrap">
+          <div
+            class="rounded-full bg-blue-50 px-4 py-2 text-sm font-medium text-blue-900"
+            :title="props.monthPercentages?.morning?.error_date || ''"
+          >
+            Morning Seder: {{ formatPercent(props.monthPercentages?.morning?.percent) }}
+          </div>
+          <div
+            class="rounded-full bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900"
+            :title="props.monthPercentages?.afternoon?.error_date || ''"
+          >
+            Afternoon Seder: {{ formatPercent(props.monthPercentages?.afternoon?.percent) }}
+          </div>
+        </div>
+      </div>
       <UButton
         @click="nextMonth"
         trailing-icon="i-lucide-arrow-right"
@@ -479,7 +629,8 @@ watch(() => props.items, generateCalendar, { deep: true });
             <td
               v-for="(day, di) in week"
               :key="di"
-              class="p-2 border border-gray-300 align-top min-w-30"
+              class="p-2 border align-top min-w-30"
+              :class="day.date === todayDate ? 'border-primary-500 border-2' : 'border-gray-300'"
             >
               <!-- Date -->
               <div
@@ -497,88 +648,97 @@ watch(() => props.items, generateCalendar, { deep: true });
                 v-if="day.data"
                 class="mt-2 text-[10px] sm:text-xs p-2 space-y-1 flex flex-col gap-1"
               >
-                <div class="flex items-center justify-center gap-2">
-                  <button
-                    @click="editClick(day.data, 'morning')"
-                    class="hover:underline cursor-pointer"
+                <div class="flex flex-col gap-2">
+                  <div
+                    v-for="(clocking, mi) in getSessionEntries(day.data, 'morning')"
+                    :key="`m-${wi}-${di}-${mi}-${clocking?.morning_id ?? clocking?.id ?? mi}`"
+                    class="flex items-center justify-center gap-2"
                   >
-                    <div
-                      class="bg-blue-50 rounded flex items-center"
-                      :class="{
-                        'bg-warning-100':
-                          is_editable(
-                            day.data.afternoon_id,
-                            day.data.afternoon_day,
-                            day.data.afternoon_session,
-                          ) === 'p',
-                      }"
+                    <button
+                      @click="editClick(clocking, 'morning')"
+                      class="hover:underline cursor-pointer"
                     >
-                      <component :is="button_text(day.data, 'morning')" />
+                      <div
+                        class="bg-blue-50 rounded flex items-center px-1"
+                        :class="{
+                          'bg-warning-100':
+                            is_editable(
+                              clocking?.morning_id,
+                              clocking?.morning_day,
+                              clocking?.morning_session,
+                            ) === 'p',
+                        }"
+                      >
+                        <component :is="button_text(clocking, 'morning')" />
 
-                      <span class="ml-1 text-gray-900">
-                        {{ day.data.morning_in }} – {{ day.data.morning_out }} |
-                        {{ day.data.retzifus_morning }} |
-                        {{ day.data.total_morning }}
-                      </span>
-                    </div>
-                  </button>
+                        <span class="ml-1 text-gray-900">
+                          {{ clocking?.morning_in }} – {{ clocking?.morning_out }} |
+                          {{ getEntryTotal(clocking, 'morning', day.data) }}
+                        </span>
+                      </div>
+                    </button>
 
-                  <UButton
-                    v-if="
-                      is_editable(
-                        day.data.morning_id,
-                        day.data.morning_day,
-                        day.data.morning_session,
-                      ) === 'p'
-                    "
-                    color="error"
-                    variant="soft"
-                    icon="i-lucide-trash-2"
-                    size="xs"
-                    @click="deletePending(day.data, 'morning')"
-                  />
+                    <UButton
+                      v-if="
+                        is_editable(
+                          clocking?.morning_id,
+                          clocking?.morning_day,
+                          clocking?.morning_session,
+                        ) === 'p'
+                      "
+                      color="error"
+                      variant="soft"
+                      icon="i-lucide-trash-2"
+                      size="xs"
+                      @click="deletePending(clocking, 'morning')"
+                    />
+                  </div>
                 </div>
 
-                <div class="flex items-center justify-center gap-2">
-                  <button
-                    @click="editClick(day.data, 'afternoon')"
-                    class="hover:underline cursor-pointer"
+                <div class="flex flex-col gap-2">
+                  <div
+                    v-for="(clocking, ai) in getSessionEntries(day.data, 'afternoon')"
+                    :key="`a-${wi}-${di}-${ai}-${clocking?.afternoon_id ?? clocking?.id ?? ai}`"
+                    class="flex items-center justify-center gap-2"
                   >
-                    <div
-                      class="bg-blue-50 rounded flex items-center"
-                      :class="{
-                        'bg-warning-100':
-                          is_editable(
-                            day.data.afternoon_id,
-                            day.data.afternoon_day,
-                            day.data.afternoon_session,
-                          ) === 'p',
-                      }"
+                    <button
+                      @click="editClick(clocking, 'afternoon')"
+                      class="hover:underline cursor-pointer"
                     >
-                      <component :is="button_text(day.data, 'afternoon')" />
+                      <div
+                        class="bg-amber-50 rounded flex items-center px-1"
+                        :class="{
+                          'bg-warning-100':
+                            is_editable(
+                              clocking?.afternoon_id,
+                              clocking?.afternoon_day,
+                              clocking?.afternoon_session,
+                            ) === 'p',
+                        }"
+                      >
+                        <component :is="button_text(clocking, 'afternoon')" />
 
-                      <span class="ml-1 text-gray-900">
-                        {{ day.data.afternoon_in }} –
-                        {{ day.data.afternoon_out }} |
-                        {{ day.data.retzifus_evening }} |
-                        {{ day.data.total_afternoon }}
-                      </span>
-                    </div>
-                  </button>
-                  <UButton
-                    v-if="
-                      is_editable(
-                        day.data.afternoon_id,
-                        day.data.afternoon_day,
-                        day.data.afternoon_session,
-                      ) === 'p'
-                    "
-                    color="error"
-                    variant="soft"
-                    icon="i-lucide-trash-2"
-                    size="xs"
-                    @click="deletePending(day.data, 'afternoon')"
-                  />
+                        <span class="ml-1 text-amber-900">
+                          {{ clocking?.afternoon_in }} – {{ clocking?.afternoon_out }} |
+                          {{ getEntryTotal(clocking, 'afternoon', day.data) }}
+                        </span>
+                      </div>
+                    </button>
+                    <UButton
+                      v-if="
+                        is_editable(
+                          clocking?.afternoon_id,
+                          clocking?.afternoon_day,
+                          clocking?.afternoon_session,
+                        ) === 'p'
+                      "
+                      color="error"
+                      variant="soft"
+                      icon="i-lucide-trash-2"
+                      size="xs"
+                      @click="deletePending(clocking, 'afternoon')"
+                    />
+                  </div>
                 </div>
               </div>
             </td>
@@ -589,7 +749,10 @@ watch(() => props.items, generateCalendar, { deep: true });
   </div>
 
   <!-- edit clocking modal -->
-  <UModal v-model:open="editClockingModal">
+  <UModal
+    :open="editClockingModal"
+    @update:open="(value) => (editClockingModal = value)"
+  >
     <!-- Custom Header -->
     <template #header>
       <div class="flex justify-between w-full">
@@ -677,7 +840,8 @@ watch(() => props.items, generateCalendar, { deep: true });
   </UModal>
 
   <UModal
-    v-model:open="deletePendingModal"
+    :open="deletePendingModal"
+    @update:open="(value) => (deletePendingModal = value)"
     title="Confirm Delete Pending Request"
     :close="{
       color: 'primary',
@@ -715,4 +879,5 @@ watch(() => props.items, generateCalendar, { deep: true });
       </div>
     </template>
   </UModal>
+</div>
 </template>
