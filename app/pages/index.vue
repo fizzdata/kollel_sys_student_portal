@@ -123,13 +123,25 @@ const onSubmit = async (event) => {
       saveOrgPin.value = org_pin;
 
       loginResetForm();
-      toast.add({
-        title: "Success",
-        description: response?.message || "Login Successfully",
-        color: "success",
-        duration: 2000,
-      });
-      navigateTo("/clocking");
+
+      if (response?.default_password) {
+        toast.add({
+          title: "Update Your Password",
+          description:
+            "You are using the default password. Please set a more secure password.",
+          color: "warning",
+          duration: 5000,
+        });
+        navigateTo("/settings");
+      } else {
+        toast.add({
+          title: "Success",
+          description: response?.message || "Login Successfully",
+          color: "success",
+          duration: 2000,
+        });
+        navigateTo("/clocking");
+      }
     } else {
       toast.add({
         title: "Failed",

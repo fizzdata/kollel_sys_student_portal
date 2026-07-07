@@ -640,7 +640,6 @@ watch(() => props.items, generateCalendar, { deep: true });
           </UFormField>
         </div>
 
-        <UCheckbox v-model="state.retzifus" size="lg" label="Retzifus" />
         <UFormField label="Notes" name="notes">
           <UTextarea
             v-model="state.notes"
