@@ -28,6 +28,16 @@ export default defineNuxtConfig({
       ],
     }
   },
+  icon: {
+    provider: 'server',
+    fallbackToApi: false,
+    serverBundle: {
+      collections: ['lucide', 'la']
+    },
+    clientBundle: {
+      scan: true
+    }
+  },
   runtimeConfig: {
     // Expose public environment variables to both client and server
     public: {
@@ -35,6 +45,7 @@ export default defineNuxtConfig({
     },
   },
   ui: {
-    colorMode: false
+    colorMode: false,
+    fonts: false
   }
 })

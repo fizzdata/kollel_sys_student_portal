@@ -1,95 +1,108 @@
 <script setup>
 import { secondsToAmPm, secondsToPercent } from "~/common/common";
+import { G2Hnumber, H2G } from "~/common/Gregorian_to_Hebrew.js";
 
 definePageMeta({ layout: "sidebar" });
 
 const api = useApi();
 const clockings = ref([]);
-const date_from = ref(30);
-const date_to = ref(new Date().toISOString().slice(0, 10));
 const loading = ref(false);
 const pendingRequests = ref([]);
 const last_editable_date = ref("");
-// Helper to get current month's date range in YYYY-MM-DD
-const getMonthRange = (date = new Date()) => {
-  const start = new Date(date.getFullYear(), date.getMonth(), 1);
-  const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-  return {
-    from: start.toISOString().slice(0, 10),
-    to: end.toISOString().slice(0, 10),
-  };
+const monthPercentages = ref({
+  morning: { percent: 0, error_date: "" },
+  afternoon: { percent: 0, error_date: "" },
+});
+
+const formatDate = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 };
+
+const getHebrewMonthRange = (date = new Date()) => {
+  const [year, month, day] = formatDate(date).split("-");
+  const [hebrewMonth, , hebrewYear] = G2Hnumber(year, month, day).split("/");
+  const firstDay = H2G(hebrewYear, Number(hebrewMonth), 1);
+  const currentDate = new Date(firstDay);
+  const firstHebrewMonth = G2Hnumber(
+    currentDate.getFullYear(),
+    currentDate.getMonth() + 1,
+    currentDate.getDate(),
+  ).split("/")[0];
+
+  while (true) {
+    currentDate.setDate(currentDate.getDate() + 1);
+
+    const nextHebrewMonth = G2Hnumber(
+      currentDate.getFullYear(),
+      currentDate.getMonth() + 1,
+      currentDate.getDate(),
+    ).split("/")[0];
+
+    if (nextHebrewMonth !== firstHebrewMonth) {
+      currentDate.setDate(currentDate.getDate() - 1);
+      return {
+        from: formatDate(firstDay),
+        to: formatDate(currentDate),
+      };
+    }
+  }
+};
+
+const activeRange = ref(getHebrewMonthRange());
 
 const normalizeClockings = (clockings) => {
   if (!clockings) return [];
 
   return Object.values(clockings).map((dayEntry) => {
-    // Normalize clocking to array
-    const sessions = Array.isArray(dayEntry.clocking)
-      ? dayEntry.clocking
-      : Object.values(dayEntry.clocking || {});
+    const normalizeEntry = (entry) => {
+      const isMorning = Number(entry?.session) === 1;
+      const prefix = isMorning ? "morning" : "afternoon";
+      const totalKey = isMorning ? "total_morning" : "total_afternoon";
+      const retzifusKey = isMorning ? "retzifus_morning" : "retzifus_evening";
+      const workedSeconds =
+        entry?.in != null && entry?.out != null ? entry.out - entry.in : null;
 
-    const row = {
-      day: dayEntry.day,
-
-      morning_day: "",
-      morning_id: "",
-      morning_session: "",
-      morning_session_id: "",
-      morning_in: "-",
-      morning_out: "-",
-      retzifus_morning: "-",
-      total_morning: "-",
-
-      afternoon_day: "",
-      afternoon_id: "",
-      afternoon_session: "",
-      afternoon_session_id: "",
-      afternoon_in: "-",
-      afternoon_out: "-",
-      retzifus_evening: "-",
-      total_afternoon: "-",
+      return {
+        ...entry,
+        [`${prefix}_day`]: entry?.day ?? dayEntry.day,
+        [`${prefix}_id`]: entry?.id ?? null,
+        [`${prefix}_session`]: entry?.session ?? null,
+        [`${prefix}_session_id`]: entry?.session_id ?? null,
+        [`${prefix}_in`]: secondsToAmPm(entry?.in),
+        [`${prefix}_out`]: secondsToAmPm(entry?.out),
+        [retzifusKey]: entry?.retzifus === 0 ? "NO" : "-",
+        [totalKey]: secondsToPercent(workedSeconds, entry?.schedule_total),
+      };
     };
 
-    sessions.forEach((s) => {
-      if (s.session === 1) {
-        row.morning_in = secondsToAmPm(s.in);
-        row.morning_out = secondsToAmPm(s.out);
-        row.retzifus_morning = s.retzifus === 0 ? "NO" : "-";
-        row.total_morning = secondsToPercent(s.out - s.in, s.schedule_total);
-        row.morning_day = s.day;
-        row.morning_id = s.id;
-        row.morning_session = s.session;
-        row.morning_session_id = s.session_id;
-      }
+    const normalizedClocking = Array.isArray(dayEntry.clocking)
+      ? dayEntry.clocking.map(normalizeEntry)
+      : Object.fromEntries(
+          Object.entries(dayEntry.clocking || {}).map(([key, entry]) => [
+            key,
+            normalizeEntry(entry),
+          ]),
+        );
 
-      if (s.session === 2) {
-        row.afternoon_in = secondsToAmPm(s.in);
-        row.afternoon_out = secondsToAmPm(s.out);
-        row.retzifus_evening = s.retzifus === 0 ? "NO" : "-";
-        row.total_afternoon = secondsToPercent(s.out - s.in, s.schedule_total);
-        row.afternoon_day = s.day;
-        row.afternoon_id = s.id;
-        row.afternoon_session = s.session;
-        row.afternoon_session_id = s.session_id;
-      }
-    });
-
-    return row;
+    return {
+      day: dayEntry.day,
+      clocking: normalizedClocking,
+    };
   });
 };
 
-const daysAgo = () => {
-  const today = new Date();
-  return new Date(today.setDate(today.getDate() - date_from.value))
-    .toISOString()
-    .slice(0, 10);
-};
-
-// Updated: accepts optional { from, to } range. Defaults to current month.
 const fetchClocking = async (range) => {
-  console.log("🚀 ~ fetchClocking ~ range:", range);
-  const { from, to } = range ?? getMonthRange();
+  const hasValidRange = range?.from && range?.to;
+  activeRange.value = hasValidRange
+    ? range
+    : activeRange.value?.from && activeRange.value?.to
+      ? activeRange.value
+      : getHebrewMonthRange();
+  const { from, to } = activeRange.value;
 
   try {
     loading.value = true;
@@ -101,7 +114,10 @@ const fetchClocking = async (range) => {
       clockings.value = normalizeClockings(response?.clockings);
       pendingRequests.value = response?.pending_edits || [];
       last_editable_date.value = response?.last_editable_date?.slice(0, 10);
-      console.log("🚀 ~ fetchClocking ~ clockings.value :", clockings.value);
+      monthPercentages.value = response?.month_percentages || {
+        morning: { percent: 0, error_date: "" },
+        afternoon: { percent: 0, error_date: "" },
+      };
     }
   } catch (err) {
     console.log("🚀 ~ fetchClocking ~ err:", err);
@@ -111,7 +127,7 @@ const fetchClocking = async (range) => {
 };
 
 onMounted(() => {
-  fetchClocking();
+  fetchClocking(activeRange.value);
 });
 </script>
 <template>
@@ -136,6 +152,7 @@ onMounted(() => {
     <div class="my-6">
       <StudentCalender
         :items="clockings"
+        :month-percentages="monthPercentages"
         @reload="fetchClocking"
         :pendingRequests="pendingRequests"
         :last_editable_date="last_editable_date"

@@ -24,7 +24,7 @@ const inactivityWarningOpen = ref(false);
 const inactivityCountdown = ref(10);
 const isLoggingOut = ref(false);
 
-const IDLE_TIMEOUT_MS = 30_000;
+const IDLE_TIMEOUT_MS = 45_000;
 const WARNING_SECONDS = 10;
 
 let inactivityTimer = null;
