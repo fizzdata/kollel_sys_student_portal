@@ -448,6 +448,7 @@ function generateCalendar() {
   const lastDay = new Date(currentDate);
   lastDay.setDate(lastDay.getDate() - 1);
   lastDate.value = formatDate(lastDay);
+  currentRange.value = { from: firstDate.value, to: lastDate.value };
 }
 
 function prevMonth() {

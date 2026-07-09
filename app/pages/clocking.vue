@@ -96,7 +96,12 @@ const normalizeClockings = (clockings) => {
 };
 
 const fetchClocking = async (range) => {
-  activeRange.value = range ?? activeRange.value ?? getHebrewMonthRange();
+  const hasValidRange = range?.from && range?.to;
+  activeRange.value = hasValidRange
+    ? range
+    : activeRange.value?.from && activeRange.value?.to
+      ? activeRange.value
+      : getHebrewMonthRange();
   const { from, to } = activeRange.value;
 
   try {
