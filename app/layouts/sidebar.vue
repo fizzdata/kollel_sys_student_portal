@@ -35,6 +35,7 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", key: "dashboard" },
   { name: "Clocking", href: "/clocking", key: "clocking" },
   { name: "Transaction", href: "/transaction", key: "transaction" },
+  { name: "Responses", href: "/responses", key: "responses" },
   { name: "Settings", href: "/settings", key: "settings" },
 ];
 
