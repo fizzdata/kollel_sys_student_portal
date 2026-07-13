@@ -10,6 +10,7 @@ const date_to = ref(new Date().toISOString().slice(0, 10));
 const loading = ref(false);
 const pendingRequests = ref([]);
 const last_editable_date = ref("");
+const monthPercentages = ref(null);
 // Helper to get current month's date range in YYYY-MM-DD
 const getMonthRange = (date = new Date()) => {
   const start = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -18,6 +19,12 @@ const getMonthRange = (date = new Date()) => {
     from: start.toISOString().slice(0, 10),
     to: end.toISOString().slice(0, 10),
   };
+};
+
+// clocked in but never out -> no credit, show 0%
+const percentFor = (s) => {
+  if (s.in != null && s.out == null) return "0%";
+  return secondsToPercent(s.out - s.in, s.schedule_total);
 };
 
 const normalizeClockings = (clockings) => {
@@ -40,6 +47,9 @@ const normalizeClockings = (clockings) => {
       morning_out: "-",
       retzifus_morning: "-",
       total_morning: "-",
+      morning_schedule_id: null,
+      morning_question_in: null,
+      morning_question_out: null,
 
       afternoon_day: "",
       afternoon_id: "",
@@ -49,6 +59,9 @@ const normalizeClockings = (clockings) => {
       afternoon_out: "-",
       retzifus_evening: "-",
       total_afternoon: "-",
+      afternoon_schedule_id: null,
+      afternoon_question_in: null,
+      afternoon_question_out: null,
     };
 
     sessions.forEach((s) => {
@@ -56,22 +69,28 @@ const normalizeClockings = (clockings) => {
         row.morning_in = secondsToAmPm(s.in);
         row.morning_out = secondsToAmPm(s.out);
         row.retzifus_morning = s.retzifus === 0 ? "NO" : "-";
-        row.total_morning = secondsToPercent(s.out - s.in, s.schedule_total);
+        row.total_morning = percentFor(s);
         row.morning_day = s.day;
         row.morning_id = s.id;
         row.morning_session = s.session;
         row.morning_session_id = s.session_id;
+        row.morning_schedule_id = s.schedule_id;
+        row.morning_question_in = s.question_in;
+        row.morning_question_out = s.question_out;
       }
 
       if (s.session === 2) {
         row.afternoon_in = secondsToAmPm(s.in);
         row.afternoon_out = secondsToAmPm(s.out);
         row.retzifus_evening = s.retzifus === 0 ? "NO" : "-";
-        row.total_afternoon = secondsToPercent(s.out - s.in, s.schedule_total);
+        row.total_afternoon = percentFor(s);
         row.afternoon_day = s.day;
         row.afternoon_id = s.id;
         row.afternoon_session = s.session;
         row.afternoon_session_id = s.session_id;
+        row.afternoon_schedule_id = s.schedule_id;
+        row.afternoon_question_in = s.question_in;
+        row.afternoon_question_out = s.question_out;
       }
     });
 
@@ -89,7 +108,7 @@ const daysAgo = () => {
 // Updated: accepts optional { from, to } range. Defaults to current month.
 const fetchClocking = async (range) => {
   console.log("🚀 ~ fetchClocking ~ range:", range);
-  const { from, to } = range ?? getMonthRange();
+  const { from, to } = range?.from && range?.to ? range : getMonthRange();
 
   try {
     loading.value = true;
@@ -101,6 +120,7 @@ const fetchClocking = async (range) => {
       clockings.value = normalizeClockings(response?.clockings);
       pendingRequests.value = response?.pending_edits || [];
       last_editable_date.value = response?.last_editable_date?.slice(0, 10);
+      monthPercentages.value = response?.month_percentages || null;
       console.log("🚀 ~ fetchClocking ~ clockings.value :", clockings.value);
     }
   } catch (err) {
@@ -139,6 +159,7 @@ onMounted(() => {
         @reload="fetchClocking"
         :pendingRequests="pendingRequests"
         :last_editable_date="last_editable_date"
+        :monthPercentages="monthPercentages"
       />
     </div>
 
