@@ -6,6 +6,7 @@ definePageMeta({ layout: "sidebar" });
 
 const api = useApi();
 const loading = ref(false);
+const balanceLoading = ref(false);
 const balance = ref(null);
 const transaction = ref([]);
 const generateChecksModal = ref(false);
@@ -80,6 +81,7 @@ const resetTransferForm = () => {
 
 const fetchTransactionSetup = async () => {
   try {
+    balanceLoading.value = true;
     const response = await api(`/student-portal/transactions`);
 
     if (response?.success) {
@@ -107,6 +109,8 @@ const fetchTransactionSetup = async () => {
       description: "An unexpected error occurred while fetching setup data",
       color: "error",
     });
+  } finally {
+    balanceLoading.value = false;
   }
 };
 
@@ -259,6 +263,12 @@ const deposit = (amount) => {
   return money(Number(amount || 0));
 };
 
+// Balance comes back from the API pre-formatted as a currency string (e.g. "$123.45")
+const balanceDisplay = computed(() => {
+  const parsed = parseFloat(String(balance.value ?? "0").replace(/[^0-9.-]/g, ""));
+  return money(Number.isFinite(parsed) ? parsed : 0);
+});
+
 const columns = [
   {
     accessorKey: "date",
@@ -340,15 +350,6 @@ const handleChange = (event) => {
       <!-- Left Content -->
       <div class="space-y-1">
         <h2 class="text-2xl font-semibold text-gray-900">Transactions</h2>
-
-        <!-- <div class="text-sm text-gray-600 flex gap-2 items-center text-center">
-          Balance:
-
-          <USkeleton v-if="loading" class="h-5 w-12" />
-          <span v-else class="font-semibold text-gray-900">
-            {{ balance }}
-          </span>
-        </div> -->
       </div>
 
       <div class="flex gap-2 self-start sm:self-auto">
@@ -360,11 +361,19 @@ const handleChange = (event) => {
         />
         <UButton
           @click="generateChecksModal = true"
-          icon="i-lucide-circle-check-big"
+          icon="i-lucide-banknote"
           label="Create Check"
           size="lg"
         />
       </div>
+    </div>
+
+    <div class="mt-6 flex flex-col items-center justify-center text-center">
+      <p class="text-sm text-gray-500">Available Balance</p>
+      <USkeleton v-if="balanceLoading" class="h-12 w-40 mt-1" />
+      <p v-else class="text-5xl font-bold text-primary mt-1">
+        {{ balanceDisplay }}
+      </p>
     </div>
     </UCard>
 

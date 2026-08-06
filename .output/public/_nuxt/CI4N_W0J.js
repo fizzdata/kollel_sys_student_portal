@@ -1,1 +1,0 @@
-import{_ as s,o as t,c as a,a as o,A as c}from"./BtL_1uBU.js";const l={},n={class:"flex flex-col min-h-screen"},r={class:"flex-1 relative isolate"};function _(e,f){return t(),a("div",n,[o("main",r,[c(e.$slots,"default")])])}const i=s(l,[["render",_]]);export{i as default};

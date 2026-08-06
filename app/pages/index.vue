@@ -9,7 +9,10 @@ const isSubmitting = ref(false);
 const token = useCookie("kollel_stundent_token");
 const student = useCookie("kollel_student");
 const saveOrgPin = useCookie("kollel_sys_org_pin");
-const org_pin = route?.query?.org_pin ?? saveOrgPin.value;
+const orgPinFromUrl = route?.query?.org_pin;
+const org_pin = ref(orgPinFromUrl ?? saveOrgPin.value ?? "");
+const needsOrgPin = ref(!orgPinFromUrl);
+const orgPinInput = ref(saveOrgPin.value ?? "");
 const resetPasswordModal = ref(false);
 const logoUrl = ref(null);
 const orgName = ref("");
@@ -62,7 +65,7 @@ const fetchLogo = async () => {
 
     const response = await api("/student-portal/logo", {
       method: "GET",
-      params: { org_pin: org_pin },
+      params: { org_pin: org_pin.value },
     });
 
     if (response?.success) {
@@ -80,8 +83,28 @@ const fetchLogo = async () => {
 };
 
 onMounted(() => {
-  fetchLogo();
+  if (org_pin.value) {
+    fetchLogo();
+  }
 });
+
+const submitOrgPin = () => {
+  const value = orgPinInput.value?.trim();
+  if (!value) {
+    toast.add({
+      title: "Error",
+      description: "Please enter an organization PIN.",
+      color: "error",
+      duration: 2000,
+    });
+    return;
+  }
+
+  org_pin.value = value;
+  saveOrgPin.value = value;
+  needsOrgPin.value = false;
+  fetchLogo();
+};
 
 const loginResetForm = () => {
   state.phone = undefined;
@@ -96,10 +119,10 @@ const resetPasswordForm = () => {
 
 const onSubmit = async (event) => {
   try {
-    if (!org_pin) {
+    if (!org_pin.value) {
       toast.add({
         title: "Error",
-        description: "Organization PIN is missing in the URL.",
+        description: "Organization PIN is required.",
         color: "error",
         duration: 2000,
       });
@@ -108,7 +131,7 @@ const onSubmit = async (event) => {
     isSubmitting.value = true;
 
     const payload = {
-      org_pin: org_pin,
+      org_pin: org_pin.value,
       ...event.data,
     };
 
@@ -120,7 +143,7 @@ const onSubmit = async (event) => {
     if (response?.success) {
       token.value = response?.token || "";
       student.value = response?.student || null;
-      saveOrgPin.value = org_pin;
+      saveOrgPin.value = org_pin.value;
 
       loginResetForm();
 
@@ -169,10 +192,10 @@ const resetPassword = async (event) => {
     fallback;
 
   try {
-    if (!org_pin) {
+    if (!org_pin.value) {
       toast.add({
         title: "Error",
-        description: "Organization PIN is missing in the URL.",
+        description: "Organization PIN is required.",
         color: "error",
         duration: 2000,
       });
@@ -182,7 +205,7 @@ const resetPassword = async (event) => {
     isSubmitting.value = true;
 
     const payload = {
-      org_pin: org_pin,
+      org_pin: org_pin.value,
       phone: event?.data?.phone,
     };
 
@@ -218,7 +241,7 @@ const resetPassword = async (event) => {
         });
         resetPasswordForm();
         resetPasswordModal.value = false;
-        navigateTo(`/?org_pin=${org_pin}`);
+        navigateTo(`/?org_pin=${org_pin.value}`);
       }
     } else {
       toast.add({
@@ -237,9 +260,50 @@ const resetPassword = async (event) => {
 </script>
 
 <template>
+  <!-- Org Pin Entry: shown when org_pin isn't provided in the URL -->
+  <div
+    v-if="needsOrgPin"
+    class="min-h-screen flex items-center justify-center bg-gray-50 px-4"
+  >
+    <UCard class="w-full max-w-md rounded-2xl shadow-lg p-6 sm:p-8">
+      <div class="mb-6 text-center">
+        <h2 class="text-2xl sm:text-3xl font-bold text-primary">
+          Kollel System
+        </h2>
+        <p class="text-sm text-gray-600 mt-1">Student Portal</p>
+      </div>
+
+      <p class="mb-6 text-center text-lg font-medium text-gray-800">
+        Enter your Organization PIN
+      </p>
+
+      <UForm :state="{ orgPinInput }" class="space-y-4" @submit="submitOrgPin">
+        <UFormField label="Organization PIN" name="orgPinInput">
+          <UInput
+            v-model="orgPinInput"
+            placeholder="Enter organization PIN"
+            size="lg"
+            class="w-full"
+          />
+        </UFormField>
+
+        <UButton
+          type="submit"
+          :loading="isSubmitting"
+          :disabled="isSubmitting"
+          block
+          size="lg"
+          class="mt-6"
+        >
+          Continue
+        </UButton>
+      </UForm>
+    </UCard>
+  </div>
+
   <!-- Error State: Invalid Organization ID -->
   <div
-    v-if="logoError && !logoLoading"
+    v-else-if="logoError && !logoLoading"
     class="min-h-screen flex items-center justify-center bg-red-50 px-4"
   >
     <div class="text-center max-w-md">
@@ -251,9 +315,21 @@ const resetPassword = async (event) => {
       </div>
       <h1 class="text-3xl font-bold text-red-900 mb-2">Invalid Pin</h1>
       <p class="text-red-700 mb-4">
-        Unable to load! <br />Please check the URL and try again.
+        Unable to load! <br />Please check the PIN and try again.
       </p>
-      <UButton color="red" @click="fetchLogo" class="w-full">Retry</UButton>
+      <UButton color="red" @click="fetchLogo" class="w-full mb-2">Retry</UButton>
+      <UButton
+        color="neutral"
+        variant="outline"
+        class="w-full"
+        @click="
+          needsOrgPin = true;
+          logoError = false;
+          orgPinInput = org_pin.value;
+        "
+      >
+        Use a different PIN
+      </UButton>
     </div>
   </div>
 

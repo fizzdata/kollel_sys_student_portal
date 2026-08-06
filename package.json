@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",
+    "@iconify-json/la": "^1.2.1",
+    "@iconify-json/lucide": "^1.2.121",
     "@nuxt/ui": "^4.3.0",
     "chart.js": "^4.5.1",
     "nuxt": "^4.2.2",

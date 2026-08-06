@@ -22,63 +22,8 @@ export function sec_to_time(totalSeconds, am = true) {
   }
 }
 
-// Helper function to convert Gregorian date to Hebrew date
-function gregorianToHebrew(gregorianDate) {
-  const date = new Date(gregorianDate);
-  const months = [
-    "Tishrei",
-    "Cheshvan",
-    "Kislev",
-    "Tevet",
-    "Shvat",
-    "Adar",
-    "Adar II",
-    "Nisan",
-    "Iyar",
-    "Sivan",
-    "Tamuz",
-    "Av",
-    "Elul",
-  ];
-
-  // Simplified conversion for demonstration purposes
-  const hebrewYear = date.getFullYear() + 3760; // Rough calculation, not accurate for all dates
-  const hebrewMonth = months[(date.getMonth() + 6) % 12];
-  const hebrewDay = date.getDate();
-
-  return { year: hebrewYear, month: hebrewMonth, day: hebrewDay };
-}
-
-// Function to determine the Parasha for a given Hebrew date
-export function getHebrewParasha(gregorianDate) {
-  const hebrewDate = gregorianToHebrew(gregorianDate);
-  const parashaSchedule = {
-    Tishrei: [
-      "Beresheet",
-      "Noach",
-      "Lech-Lecha",
-      "Vayera",
-      "Chayei Sarah",
-      "Toldot",
-    ],
-    Cheshvan: ["Vayetze", "Vayishlach", "Vayeshev", "Miketz"],
-    Kislev: ["Vayigash", "Vayechi", "Shemot", "Vaera"],
-    Tevet: ["Bo", "Beshalach", "Yitro", "Mishpatim"],
-    Shvat: ["Terumah", "Tetzaveh", "Ki Tisa", "Vayakhel"],
-    Adar: ["Pekudei", "Vayikra", "Tzav"],
-    Nisan: ["Shmini", "Tazria", "Metzora", "Achrei Mot"],
-    Iyar: ["Kedoshim", "Emor", "Behar", "Bechukotai"],
-    Sivan: ["Bamidbar", "Naso", "Behaalotecha", "Shlach"],
-    Tamuz: ["Korach", "Chukat", "Balak", "Pinchas"],
-    Av: ["Matot", "Masei", "Devarim", "Vaetchanan"],
-    Elul: ["Eikev", "Reeh", "Shoftim", "Ki Teitzei"],
-  };
-
-  const parashaList = parashaSchedule[hebrewDate.month];
-  const weekOfMonth = Math.floor((hebrewDate.day - 1) / 7);
-
-  return parashaList[weekOfMonth];
-}
+// Parsha (or yom tov) of the week's Shabbos, in Hebrew — see parsha.js
+export { parsha as getHebrewParasha } from "./parsha.js";
 
 export const secondsToAmPm = (seconds) => {
   if (seconds == null) return "-";

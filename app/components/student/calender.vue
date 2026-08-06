@@ -1,5 +1,5 @@
 <script setup>
-import { convertTo24Hour } from "~/common/common";
+import { convertTo24Hour, getHebrewParasha } from "~/common/common";
 import {
   FormatYear,
   G2H,
@@ -711,6 +711,12 @@ watch(() => props.items, generateCalendar, { deep: true });
                 <div class="text-gray-400 text-[10px] sm:text-xs">
                   {{ day.date }}
                 </div>
+                <div
+                  v-if="di === 6"
+                  class="text-primary-600 text-[10px] sm:text-xs font-bold"
+                >
+                  {{ getHebrewParasha(day.date) }}
+                </div>
               </div>
 
               <!-- Day Data -->
@@ -856,9 +862,6 @@ watch(() => props.items, generateCalendar, { deep: true });
                     >
                       {{ item.q.response.response }}
                     </span>
-                    <UBadge v-else color="warning" variant="soft" size="sm">
-                      Not answered
-                    </UBadge>
                     <UButton
                       v-if="item.q.can_answer || item.q.can_change"
                       size="xs"
@@ -975,9 +978,6 @@ watch(() => props.items, generateCalendar, { deep: true });
                 <span v-if="item.q.response" class="font-medium text-gray-900">
                   {{ item.q.response.response }}
                 </span>
-                <UBadge v-else color="warning" variant="soft" size="sm">
-                  Not answered
-                </UBadge>
               </p>
 
               <UButton
