@@ -9,6 +9,7 @@ const isSubmitting = ref(false);
 const token = useCookie("kollel_stundent_token");
 const student = useCookie("kollel_student");
 const saveOrgPin = useCookie("kollel_sys_org_pin");
+const showDefaultPasswordReminder = useCookie("kollel_default_password_reminder");
 const orgPinFromUrl = route?.query?.org_pin;
 const org_pin = ref(orgPinFromUrl ?? saveOrgPin.value ?? "");
 const needsOrgPin = ref(!orgPinFromUrl);
@@ -19,7 +20,6 @@ const orgName = ref("");
 const logoLoading = ref(true);
 const logoError = ref(false);
 
-const confirmCode = ref(false);
 const schema = yup.object({
   phone: yup
     .string()
@@ -31,30 +31,9 @@ const schema = yup.object({
     .required("Password is required"),
 });
 
-const resetPasswordSchema = computed(() =>
-  yup.object({
-    phone: yup
-      .string()
-      .matches(/^\+?[0-9]{7,15}$/, "Invalid phone number")
-      .required("Phone is required"),
-
-    code: confirmCode.value
-      ? yup
-          .string()
-          .length(6, "Code must be 6 digits")
-          .required("Verification code is required")
-      : yup.string().notRequired(),
-  }),
-);
-
 const state = reactive({
   phone: undefined,
   password: undefined,
-});
-
-const resetPasswordState = reactive({
-  phone: undefined,
-  code: undefined,
 });
 
 // Fetch logo on component mount
@@ -111,12 +90,6 @@ const loginResetForm = () => {
   state.password = undefined;
 };
 
-const resetPasswordForm = () => {
-  resetPasswordState.phone = undefined;
-  resetPasswordState.code = undefined;
-  confirmCode.value = false;
-};
-
 const onSubmit = async (event) => {
   try {
     if (!org_pin.value) {
@@ -148,14 +121,8 @@ const onSubmit = async (event) => {
       loginResetForm();
 
       if (response?.default_password) {
-        toast.add({
-          title: "Update Your Password",
-          description:
-            "You are using the default password. Please set a more secure password.",
-          color: "warning",
-          duration: 5000,
-        });
-        navigateTo("/settings");
+        showDefaultPasswordReminder.value = true;
+        navigateTo("/clocking");
       } else {
         toast.add({
           title: "Success",
@@ -183,80 +150,6 @@ const onSubmit = async (event) => {
   }
 };
 
-const resetPassword = async (event) => {
-  const apiMessage = (response, fallback) =>
-    response?._data?.errors ||
-    response?._data?.message ||
-    response?.data?.message ||
-    response?.message ||
-    fallback;
-
-  try {
-    if (!org_pin.value) {
-      toast.add({
-        title: "Error",
-        description: "Organization PIN is required.",
-        color: "error",
-        duration: 2000,
-      });
-      return;
-    }
-
-    isSubmitting.value = true;
-
-    const payload = {
-      org_pin: org_pin.value,
-      phone: event?.data?.phone,
-    };
-
-    if (confirmCode.value && event?.data?.code) {
-      payload.code = event.data.code;
-    }
-
-    const endpoint = confirmCode.value
-      ? "/student-portal/password-reset/2"
-      : "/student-portal/password-reset/1";
-
-    const response = await api(endpoint, {
-      method: "POST",
-      body: payload,
-    });
-
-    if (response?.success) {
-      if (!confirmCode.value) {
-        confirmCode.value = true;
-        resetPasswordState.phone = event?.data?.phone;
-        toast.add({
-          title: "Success",
-          description: apiMessage(response, "Code Sent!"),
-          color: "success",
-          duration: 2000,
-        });
-      } else {
-        toast.add({
-          title: "Success",
-          description: apiMessage(response, "Password Reset!"),
-          color: "success",
-          duration: 2000,
-        });
-        resetPasswordForm();
-        resetPasswordModal.value = false;
-        navigateTo(`/?org_pin=${org_pin.value}`);
-      }
-    } else {
-      toast.add({
-        title: "Failed",
-        description: apiMessage(response, "Code Sending Failed"),
-        color: "error",
-        duration: 2000,
-      });
-    }
-  } catch (error) {
-    console.error("Error Reset Password:", error);
-  } finally {
-    isSubmitting.value = false;
-  }
-};
 </script>
 
 <template>
@@ -490,66 +383,5 @@ const resetPassword = async (event) => {
   </div>
 
   <!-- Reset Password Modal -->
-  <UModal v-model:open="resetPasswordModal">
-    <template #header>
-      <div class="flex justify-between w-full items-center">
-        <h2 class="text-xl font-bold text-primary">Reset Password</h2>
-        <UButton
-          size="sm"
-          variant="outline"
-          color="primary"
-          class="rounded-full p-2"
-          icon="i-lucide-x"
-          @click="resetPasswordModal = false"
-        />
-      </div>
-    </template>
-
-    <template #body>
-      <UForm
-        :schema="resetPasswordSchema"
-        :state="resetPasswordState"
-        class="space-y-4"
-        @submit="resetPassword"
-      >
-        <UFormField label="Phone" name="phone">
-          <UInput
-            v-model="resetPasswordState.phone"
-            placeholder="Enter your phone"
-            size="lg"
-            class="w-full"
-          />
-        </UFormField>
-
-        <UFormField v-if="confirmCode" label="Confirmation Code" name="code">
-          <UInput
-            v-model="resetPasswordState.code"
-            placeholder="Enter your confirmation code"
-            size="lg"
-            class="w-full"
-            type="number"
-          />
-        </UFormField>
-
-        <div
-          class="flex justify-end items-center gap-2 mt-4 border-t border-gray-200 pt-4"
-        >
-          <UButton
-            color="neutral"
-            variant="solid"
-            @click="resetPasswordModal = false"
-          >
-            Cancel
-          </UButton>
-          <UButton
-            type="submit"
-            :loading="isSubmitting"
-            :disabled="isSubmitting"
-          >
-            {{ confirmCode ? "Verify Code" : "Send Code" }}
-          </UButton>
-        </div>
-      </UForm>
-    </template>
-  </UModal>
+  <CommonResetPasswordModal v-model="resetPasswordModal" />
 </template>

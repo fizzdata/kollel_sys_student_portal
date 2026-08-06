@@ -19,6 +19,8 @@ const api = useApi();
 const token = useCookie("kollel_stundent_token");
 const student = useCookie("kollel_student");
 const org_pin = useCookie("kollel_sys_org_pin");
+const showDefaultPasswordReminder = useCookie("kollel_default_password_reminder");
+const defaultPasswordModalOpen = ref(false);
 
 const inactivityWarningOpen = ref(false);
 const inactivityCountdown = ref(10);
@@ -32,7 +34,6 @@ let countdownTimer = null;
 
 const toast = useToast();
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", key: "dashboard" },
   { name: "Clocking", href: "/clocking", key: "clocking" },
   { name: "Transaction", href: "/transaction", key: "transaction" },
   { name: "Settings", href: "/settings", key: "settings" },
@@ -152,6 +153,11 @@ onMounted(() => {
   });
 
   startInactivityTimer();
+
+  if (showDefaultPasswordReminder.value) {
+    defaultPasswordModalOpen.value = true;
+    showDefaultPasswordReminder.value = null;
+  }
 });
 
 onBeforeUnmount(() => {
@@ -273,5 +279,7 @@ watch(token, (value) => {
         </div>
       </template>
     </UModal>
+
+    <CommonDefaultPasswordModal v-model="defaultPasswordModalOpen" />
   </div>
 </template>

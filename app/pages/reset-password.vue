@@ -1,94 +1,64 @@
 <script setup>
 import * as yup from "yup";
 
-const confirmCode = ref(false);
 const toast = useToast();
-const api = useApi();
-const isSubmitting = ref(false);
 const saveOrgPin = useCookie("kollel_sys_org_pin");
 const route = useRoute();
 const org_pin = route.query.org_pin ?? saveOrgPin.value;
 
-const state = reactive({
-  phone: undefined,
-});
-const resetPasswordForm = () => {
-  state.phone = undefined;
-};
+const { step, question, state, isSubmitting, apiMessage, requestQuestion, submitAnswer } =
+  useResetPassword();
+
 const schema = computed(() =>
   yup.object({
-    phone: yup
-      .string()
-      .matches(/^\+?[0-9]{7,15}$/, "Invalid phone number")
-      .required("Phone is required"),
+    phone:
+      step.value === "phone"
+        ? yup
+            .string()
+            .matches(/^\+?[0-9]{7,15}$/, "Invalid phone number")
+            .required("Phone is required")
+        : yup.string().notRequired(),
 
-    code: confirmCode.value
-      ? yup
-          .string()
-          .length(6, "Code must be 6 digits")
-          .required("Verification code is required")
-      : yup.string().notRequired(),
+    answer:
+      step.value === "answer"
+        ? yup.string().required("Answer is required")
+        : yup.string().notRequired(),
   }),
 );
 
-const apiMessage = (response, fallback) =>
-  response?._data?.errors ||
-  response?._data?.message ||
-  response?.data?.message ||
-  response?.message ||
-  fallback;
-
-const onSubmit = async (event) => {
-  try {
-    if (!org_pin) {
-      toast.add({
-        title: "Error",
-        description: "Organization PIN is missing in the URL.",
-        color: "error",
-        duration: 2000,
-      });
-      return;
-    }
-
-    isSubmitting.value = true;
-
-    const payload = {
-      org_pin: org_pin,
-      ...event.data,
-    };
-    const endpoint = `/student-portal/password-reset/1`;
-
-    console.log("event", event.data);
-
-    const response = await api(endpoint, {
-      method: "POST",
-      body: payload,
+const onSubmit = async () => {
+  if (!org_pin) {
+    toast.add({
+      title: "Error",
+      description: "Organization PIN is missing in the URL.",
+      color: "error",
+      duration: 2000,
     });
-    //getitem, json.parse
+    return;
+  }
 
-    if (response?.success) {
-      confirmCode.value = true;
-      state.phone = event?.data?.phone;
+  const isAnswerStep = step.value === "answer";
+  const response = isAnswerStep
+    ? await submitAnswer(org_pin)
+    : await requestQuestion(org_pin);
+
+  if (response?.success) {
+    if (isAnswerStep) {
       toast.add({
         title: "Success",
-        description: apiMessage(response, "Code Sent!"),
+        description: apiMessage(response, "Password reset successfully!"),
         color: "success",
-        duration: 2000,
+        duration: 3000,
       });
-      resetPasswordForm();
       navigateTo(`/?org_pin=${org_pin}`);
-    } else {
-      toast.add({
-        title: "Failed",
-        description: apiMessage(response, "Code Sending Failed"),
-        color: "error",
-        duration: 2000,
-      });
     }
-  } catch (error) {
-    console.error("Error Login:", error);
-  } finally {
-    isSubmitting.value = false;
+  } else {
+    toast.add({
+      title: "Failed",
+      description: apiMessage(response, "Something went wrong"),
+      color: "error",
+      duration: 2000,
+    });
   }
 };
 </script>
@@ -129,7 +99,7 @@ const onSubmit = async (event) => {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Phone" name="phone">
+        <UFormField v-if="step === 'phone'" label="Phone" name="phone">
           <UInput
             v-model="state.phone"
             placeholder="Enter your phone"
@@ -138,15 +108,16 @@ const onSubmit = async (event) => {
           />
         </UFormField>
 
-        <UFormField v-if="confirmCode" label="Confirmation Code" name="code">
+        <UFormField v-else label="Answer" name="answer">
+          <p class="mb-2 text-sm text-gray-600">{{ question }}</p>
           <UInput
-            v-model="state.code"
-            placeholder="Enter your confirmation code"
+            v-model="state.answer"
+            placeholder="Enter your answer"
             size="lg"
             class="w-full"
-            type="number"
           />
         </UFormField>
+
         <UButton
           type="submit"
           :loading="isSubmitting"
