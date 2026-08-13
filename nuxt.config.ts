@@ -4,6 +4,15 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxt/ui'],
   css: ['~/assets/css/main.css'],
+  icon: {
+    provider: 'iconify',
+    clientBundle: {
+      scan: true,
+      includeCustomCollections: true,
+      sizeLimitKb: 512,
+    },
+    fallbackToApi: false,
+  },
   app: {
     baseURL: '/',
     head: {

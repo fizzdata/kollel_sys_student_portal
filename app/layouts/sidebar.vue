@@ -15,6 +15,7 @@ import {
 const sidebarOpen = ref(false);
 const route = useRoute();
 const api = useApi();
+const { locale, toggleLocale } = useLocale();
 
 const token = useCookie("kollel_stundent_token");
 const student = useCookie("kollel_student");
@@ -233,6 +234,9 @@ watch(token, (value) => {
         </div>
 
         <div class="flex flex-1 items-center justify-end gap-x-6">
+          <UButton color="neutral" variant="outline" @click="toggleLocale">
+            {{ locale === "yi" ? "EN" : "יידיש" }}
+          </UButton>
           <UButton @click="logout" class="ml-4"> Log Out </UButton>
         </div>
       </nav>

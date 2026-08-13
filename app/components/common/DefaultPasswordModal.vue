@@ -11,9 +11,9 @@ const isOpen = computed({
 });
 
 const toast = useToast();
+const { t } = useLocale();
 const step = ref("password");
 
-const currentPassshow = ref(false);
 const newPassShow = ref(false);
 const confirmPassShow = ref(false);
 
@@ -22,7 +22,7 @@ const {
   state: passwordState,
   isSubmitting: isSubmittingPassword,
   submit: submitChangePassword,
-} = useChangePassword();
+} = useChangePassword(true);
 
 const {
   schema: securityQuestionSchema,
@@ -46,20 +46,20 @@ const onSubmitPassword = async () => {
 
   if (response?.success) {
     toast.add({
-      title: "Success",
-      description: response?.message || "Password updated successfully",
+      title: t("Success"),
+      description: response?.message || t("Password updated successfully"),
       color: "success",
       duration: 2000,
     });
     step.value = "security-question";
   } else {
     toast.add({
-      title: "Failed",
+      title: t("Failed"),
       description:
         response?._data?.errors ||
         response?._data?.message ||
         response?.message ||
-        "Failed to update password",
+        t("Failed to update password"),
       color: "error",
       duration: 2000,
     });
@@ -71,20 +71,20 @@ const onSubmitSecurityQuestion = async () => {
 
   if (response?.success) {
     toast.add({
-      title: "Success",
-      description: response?.message || "Security question saved",
+      title: t("Success"),
+      description: response?.message || t("Security question saved"),
       color: "success",
       duration: 2000,
     });
     closeModal();
   } else {
     toast.add({
-      title: "Failed",
+      title: t("Failed"),
       description:
         response?._data?.errors ||
         response?._data?.message ||
         response?.message ||
-        "Failed to save security question",
+        t("Failed to save security question"),
       color: "error",
       duration: 2000,
     });
@@ -98,8 +98,8 @@ const onSubmitSecurityQuestion = async () => {
         <h2 class="text-xl font-bold text-primary">
           {{
             step === "password"
-              ? "Set a New Password"
-              : "Add a Security Question"
+              ? t("Set a New Password")
+              : t("Add a Security Question")
           }}
         </h2>
         <UButton
@@ -116,8 +116,11 @@ const onSubmitSecurityQuestion = async () => {
     <template #body>
       <div v-if="step === 'password'">
         <p class="mb-6 text-sm text-gray-500">
-          You're still using the default password. Set a new one to keep your
-          account secure.
+          {{
+            t(
+              "You're still using the default password. Set a new one to keep your account secure.",
+            )
+          }}
         </p>
 
         <UForm
@@ -126,35 +129,12 @@ const onSubmitSecurityQuestion = async () => {
           class="space-y-4"
           @submit="onSubmitPassword"
         >
-          <UFormField label="Current Password" name="old_password">
-            <UInput
-              v-model="passwordState.old_password"
-              placeholder="Current Password"
-              :type="currentPassshow ? 'text' : 'password'"
-              :ui="{ trailing: 'pe-1' }"
-              class="w-full"
-              size="lg"
-            >
-              <template #trailing>
-                <UButton
-                  color="neutral"
-                  variant="link"
-                  size="sm"
-                  :icon="currentPassshow ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                  :aria-label="
-                    currentPassshow ? 'Hide password' : 'Show password'
-                  "
-                  @click="currentPassshow = !currentPassshow"
-                />
-              </template>
-            </UInput>
-          </UFormField>
-
-          <UFormField label="New Password" name="password">
+          <UFormField :label="t('New Password')" name="password">
             <UInput
               v-model="passwordState.password"
-              placeholder="New Password"
+              :placeholder="t('New Password')"
               :type="newPassShow ? 'text' : 'password'"
+              autocomplete="new-password"
               :ui="{ trailing: 'pe-1' }"
               class="w-full"
               size="lg"
@@ -172,11 +152,12 @@ const onSubmitSecurityQuestion = async () => {
             </UInput>
           </UFormField>
 
-          <UFormField label="Confirm Password" name="password_confirmation">
+          <UFormField :label="t('Confirm Password')" name="password_confirmation">
             <UInput
               v-model="passwordState.password_confirmation"
-              placeholder="Confirm Password"
+              :placeholder="t('Confirm Password')"
               :type="confirmPassShow ? 'text' : 'password'"
+              autocomplete="new-password"
               :ui="{ trailing: 'pe-1' }"
               class="w-full"
               size="lg"
@@ -198,14 +179,14 @@ const onSubmitSecurityQuestion = async () => {
 
           <div class="flex justify-end items-center gap-2 mt-4 border-t border-gray-200 pt-4">
             <UButton color="neutral" variant="solid" @click="closeModal">
-              Remind Me Later
+              {{ t("Remind Me Later") }}
             </UButton>
             <UButton
               type="submit"
               :loading="isSubmittingPassword"
               :disabled="isSubmittingPassword"
             >
-              Update Password
+              {{ t("Update Password") }}
             </UButton>
           </div>
         </UForm>
@@ -213,8 +194,11 @@ const onSubmitSecurityQuestion = async () => {
 
       <div v-else>
         <p class="mb-6 text-sm text-gray-500">
-          Recommended: set up a security question so you can reset your own
-          password if you ever forget it.
+          {{
+            t(
+              "Recommended: set up a security question so you can reset your own password if you ever forget it.",
+            )
+          }}
         </p>
 
         <UForm
@@ -223,19 +207,19 @@ const onSubmitSecurityQuestion = async () => {
           class="space-y-4"
           @submit="onSubmitSecurityQuestion"
         >
-          <UFormField label="Your Security Question" name="question">
+          <UFormField :label="t('Your Security Question')" name="question">
             <UInput
               v-model="securityQuestionState.question"
-              placeholder="e.g. What did I name my first bicycle?"
+              :placeholder="t('e.g. What did I name my first bicycle?')"
               size="lg"
               class="w-full"
             />
           </UFormField>
 
-          <UFormField label="Your Answer" name="answer">
+          <UFormField :label="t('Your Answer')" name="answer">
             <UInput
               v-model="securityQuestionState.answer"
-              placeholder="Enter your answer"
+              :placeholder="t('Enter your answer')"
               size="lg"
               class="w-full"
             />
@@ -243,14 +227,14 @@ const onSubmitSecurityQuestion = async () => {
 
           <div class="flex justify-end items-center gap-2 mt-4 border-t border-gray-200 pt-4">
             <UButton color="neutral" variant="solid" @click="closeModal">
-              Maybe Later
+              {{ t("Maybe Later") }}
             </UButton>
             <UButton
               type="submit"
               :loading="isSubmittingSecurityQuestion"
               :disabled="isSubmittingSecurityQuestion"
             >
-              Save
+              {{ t("Save") }}
             </UButton>
           </div>
         </UForm>

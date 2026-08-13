@@ -5,31 +5,43 @@ const show = ref(false);
 const toast = useToast();
 const api = useApi();
 const route = useRoute();
+const { locale, toggleLocale, t } = useLocale();
 const isSubmitting = ref(false);
 const token = useCookie("kollel_stundent_token");
 const student = useCookie("kollel_student");
 const saveOrgPin = useCookie("kollel_sys_org_pin");
 const showDefaultPasswordReminder = useCookie("kollel_default_password_reminder");
 const orgPinFromUrl = route?.query?.org_pin;
-const org_pin = ref(orgPinFromUrl ?? saveOrgPin.value ?? "");
-const needsOrgPin = ref(!orgPinFromUrl);
-const orgPinInput = ref(saveOrgPin.value ?? "");
+// The cookie is session-only (no maxAge), so localStorage is the durable
+// fallback that survives a browser restart.
+const storedOrgPin = import.meta.client
+  ? localStorage.getItem("kollel_sys_org_pin")
+  : null;
+const org_pin = ref(orgPinFromUrl ?? saveOrgPin.value ?? storedOrgPin ?? "");
+const needsOrgPin = ref(!org_pin.value);
+const orgPinInput = ref(org_pin.value);
+
+const persistOrgPin = (value) => {
+  saveOrgPin.value = value;
+  if (import.meta.client) {
+    localStorage.setItem("kollel_sys_org_pin", value);
+  }
+};
 const resetPasswordModal = ref(false);
 const logoUrl = ref(null);
 const orgName = ref("");
 const logoLoading = ref(true);
 const logoError = ref(false);
 
-const schema = yup.object({
-  phone: yup
-    .string()
-    .matches(/^\+?[0-9]{7,15}$/, "Invalid phone number")
-    .required("Phone is required"),
-  password: yup
-    .string()
-    .min(1, "Must be at least 8 characters")
-    .required("Password is required"),
-});
+const schema = computed(() =>
+  yup.object({
+    phone: yup
+      .string()
+      .matches(/^\+?[0-9]{7,15}$/, t("Invalid phone number"))
+      .required(t("Phone is required")),
+    password: yup.string().required(t("Password is required")),
+  }),
+);
 
 const state = reactive({
   phone: undefined,
@@ -71,8 +83,8 @@ const submitOrgPin = () => {
   const value = orgPinInput.value?.trim();
   if (!value) {
     toast.add({
-      title: "Error",
-      description: "Please enter an organization PIN.",
+      title: t("Error"),
+      description: t("Please enter an organization PIN."),
       color: "error",
       duration: 2000,
     });
@@ -80,7 +92,7 @@ const submitOrgPin = () => {
   }
 
   org_pin.value = value;
-  saveOrgPin.value = value;
+  persistOrgPin(value);
   needsOrgPin.value = false;
   fetchLogo();
 };
@@ -94,8 +106,8 @@ const onSubmit = async (event) => {
   try {
     if (!org_pin.value) {
       toast.add({
-        title: "Error",
-        description: "Organization PIN is required.",
+        title: t("Error"),
+        description: t("Organization PIN is required."),
         color: "error",
         duration: 2000,
       });
@@ -116,7 +128,7 @@ const onSubmit = async (event) => {
     if (response?.success) {
       token.value = response?.token || "";
       student.value = response?.student || null;
-      saveOrgPin.value = org_pin.value;
+      persistOrgPin(org_pin.value);
 
       loginResetForm();
 
@@ -125,8 +137,8 @@ const onSubmit = async (event) => {
         navigateTo("/clocking");
       } else {
         toast.add({
-          title: "Success",
-          description: response?.message || "Login Successfully",
+          title: t("Success"),
+          description: response?.message || t("Login Successfully"),
           color: "success",
           duration: 2000,
         });
@@ -134,11 +146,11 @@ const onSubmit = async (event) => {
       }
     } else {
       toast.add({
-        title: "Failed",
+        title: t("Failed"),
         description:
           response?._data.errors ||
           response?._data.message ||
-          "Failed to Login",
+          t("Failed to Login"),
         color: "error",
         duration: 2000,
       });
@@ -153,6 +165,15 @@ const onSubmit = async (event) => {
 </script>
 
 <template>
+  <!-- Language Toggle -->
+  <button
+    type="button"
+    class="fixed top-4 end-4 z-50 rounded-full bg-white px-3 py-1.5 text-sm font-medium text-primary shadow ring-1 ring-gray-200 hover:bg-gray-50"
+    @click="toggleLocale"
+  >
+    {{ locale === "yi" ? "EN" : "יידיש" }}
+  </button>
+
   <!-- Org Pin Entry: shown when org_pin isn't provided in the URL -->
   <div
     v-if="needsOrgPin"
@@ -161,20 +182,20 @@ const onSubmit = async (event) => {
     <UCard class="w-full max-w-md rounded-2xl shadow-lg p-6 sm:p-8">
       <div class="mb-6 text-center">
         <h2 class="text-2xl sm:text-3xl font-bold text-primary">
-          Kollel System
+          {{ t("Kollel System") }}
         </h2>
-        <p class="text-sm text-gray-600 mt-1">Student Portal</p>
+        <p class="text-sm text-gray-600 mt-1">{{ t("Student Portal") }}</p>
       </div>
 
       <p class="mb-6 text-center text-lg font-medium text-gray-800">
-        Enter your Organization PIN
+        {{ t("Enter your Organization PIN") }}
       </p>
 
       <UForm :state="{ orgPinInput }" class="space-y-4" @submit="submitOrgPin">
-        <UFormField label="Organization PIN" name="orgPinInput">
+        <UFormField :label="t('Organization PIN')" name="orgPinInput">
           <UInput
             v-model="orgPinInput"
-            placeholder="Enter organization PIN"
+            :placeholder="t('Enter organization PIN')"
             size="lg"
             class="w-full"
           />
@@ -188,7 +209,7 @@ const onSubmit = async (event) => {
           size="lg"
           class="mt-6"
         >
-          Continue
+          {{ t("Continue") }}
         </UButton>
       </UForm>
     </UCard>
@@ -206,11 +227,11 @@ const onSubmit = async (event) => {
           class="w-16 h-16 text-red-600 mx-auto"
         />
       </div>
-      <h1 class="text-3xl font-bold text-red-900 mb-2">Invalid Pin</h1>
+      <h1 class="text-3xl font-bold text-red-900 mb-2">{{ t("Invalid Pin") }}</h1>
       <p class="text-red-700 mb-4">
-        Unable to load! <br />Please check the PIN and try again.
+        {{ t("Unable to load!") }} <br />{{ t("Please check the PIN and try again.") }}
       </p>
-      <UButton color="red" @click="fetchLogo" class="w-full mb-2">Retry</UButton>
+      <UButton color="red" @click="fetchLogo" class="w-full mb-2">{{ t("Retry") }}</UButton>
       <UButton
         color="neutral"
         variant="outline"
@@ -218,10 +239,10 @@ const onSubmit = async (event) => {
         @click="
           needsOrgPin = true;
           logoError = false;
-          orgPinInput = org_pin.value;
+          orgPinInput = org_pin;
         "
       >
-        Use a different PIN
+        {{ t("Use a different PIN") }}
       </UButton>
     </div>
   </div>
@@ -255,7 +276,7 @@ const onSubmit = async (event) => {
             name="i-lucide-loader"
             class="w-20 h-20 text-white animate-spin mb-4"
           />
-          <p class="text-white text-lg">Loading...</p>
+          <p class="text-white text-lg">{{ t("Loading...") }}</p>
         </div>
         <div
           v-else-if="logoUrl"
@@ -268,7 +289,7 @@ const onSubmit = async (event) => {
           />
           <h1 class="text-white text-2xl font-bold">{{ orgName }}</h1>
           <p class="text-indigo-100 mt-2 text-lg">
-            Kollel System Student Portal
+            {{ t("Kollel System") }} {{ t("Student Portal") }}
           </p>
         </div>
       </div>
@@ -306,15 +327,15 @@ const onSubmit = async (event) => {
           <!-- Brand -->
           <div class="mb-6 text-center">
             <h2 class="text-2xl sm:text-3xl font-bold text-primary">
-              Kollel System
+              {{ t("Kollel System") }}
             </h2>
-            <p class="text-sm text-gray-600 mt-1">Student Portal</p>
-              <p class="mt-2 text-xs text-gray-500">by Fizz Data</p>
+            <p class="text-sm text-gray-600 mt-1">{{ t("Student Portal") }}</p>
+              <p class="mt-2 text-xs text-gray-500">{{ t("by Fizz Data") }}</p>
           </div>
 
           <!-- Title -->
           <p class="my-6 text-center text-lg font-medium text-gray-800">
-            Login to your account
+            {{ t("Login to your account") }}
           </p>
 
           <!-- Form -->
@@ -324,20 +345,22 @@ const onSubmit = async (event) => {
             class="space-y-4"
             @submit="onSubmit"
           >
-            <UFormField label="Phone" name="phone">
+            <UFormField :label="t('Phone')" name="phone">
               <UInput
                 v-model="state.phone"
-                placeholder="Enter your phone"
+                :placeholder="t('Enter your phone')"
+                autocomplete="tel"
                 size="lg"
                 class="w-full"
               />
             </UFormField>
 
-            <UFormField label="Password" name="password">
+            <UFormField :label="t('Password')" name="password">
               <UInput
                 v-model="state.password"
-                placeholder="Password"
+                :placeholder="t('Password')"
                 :type="show ? 'text' : 'password'"
+                autocomplete="current-password"
                 :ui="{ trailing: 'pe-1' }"
                 class="w-full"
               >
@@ -364,7 +387,7 @@ const onSubmit = async (event) => {
               size="lg"
               class="mt-6"
             >
-              Login
+              {{ t("Login") }}
             </UButton>
           </UForm>
 
@@ -374,7 +397,7 @@ const onSubmit = async (event) => {
               @click="resetPasswordModal = true"
               class="font-semibold text-primary hover:text-gray-500 hover:underline cursor-pointer"
             >
-              Reset Password!
+              {{ t("Reset Password!") }}
             </button>
           </p>
         </UCard>

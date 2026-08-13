@@ -16,6 +16,7 @@ const toast = useToast();
 const saveOrgPin = useCookie("kollel_sys_org_pin");
 const route = useRoute();
 const org_pin = route.query.org_pin ?? saveOrgPin.value;
+const { t } = useLocale();
 
 const { step, question, state, isSubmitting, apiMessage, reset, requestQuestion, submitAnswer } =
   useResetPassword();
@@ -26,13 +27,13 @@ const schema = computed(() =>
       step.value === "phone"
         ? yup
             .string()
-            .matches(/^\+?[0-9]{7,15}$/, "Invalid phone number")
-            .required("Phone is required")
+            .matches(/^\+?[0-9]{7,15}$/, t("Invalid phone number"))
+            .required(t("Phone is required"))
         : yup.string().notRequired(),
 
     answer:
       step.value === "answer"
-        ? yup.string().required("Answer is required")
+        ? yup.string().required(t("Answer is required"))
         : yup.string().notRequired(),
   }),
 );
@@ -45,8 +46,8 @@ const closeModal = () => {
 const onSubmit = async () => {
   if (!org_pin) {
     toast.add({
-      title: "Error",
-      description: "Organization PIN is missing in the URL.",
+      title: t("Error"),
+      description: t("Organization PIN is missing in the URL."),
       color: "error",
       duration: 2000,
     });
@@ -61,8 +62,8 @@ const onSubmit = async () => {
   if (response?.success) {
     if (isAnswerStep) {
       toast.add({
-        title: "Success",
-        description: apiMessage(response, "Password reset successfully!"),
+        title: t("Success"),
+        description: apiMessage(response, t("Password reset successfully!")),
         color: "success",
         duration: 3000,
       });
@@ -71,8 +72,8 @@ const onSubmit = async () => {
     }
   } else {
     toast.add({
-      title: "Failed",
-      description: apiMessage(response, "Something went wrong"),
+      title: t("Failed"),
+      description: apiMessage(response, t("Something went wrong")),
       color: "error",
       duration: 2000,
     });
@@ -84,7 +85,7 @@ const onSubmit = async () => {
     <!-- Custom Header -->
     <template #header>
       <div class="flex justify-between w-full">
-        <h2 class="text-xl font-bold text-primary">Reset Password</h2>
+        <h2 class="text-xl font-bold text-primary">{{ t("Reset Password") }}</h2>
 
         <!-- Close Button -->
         <UButton
@@ -106,20 +107,21 @@ const onSubmit = async () => {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField v-if="step === 'phone'" label="Phone" name="phone">
+        <UFormField v-if="step === 'phone'" :label="t('Phone')" name="phone">
           <UInput
             v-model="state.phone"
-            placeholder="Enter your phone"
+            :placeholder="t('Enter your phone')"
+            autocomplete="tel"
             size="lg"
             class="w-full"
           />
         </UFormField>
 
-        <UFormField v-else label="Answer" name="answer">
+        <UFormField v-else :label="t('Answer')" name="answer">
           <p class="mb-2 text-sm text-gray-600">{{ question }}</p>
           <UInput
             v-model="state.answer"
-            placeholder="Enter your answer"
+            :placeholder="t('Enter your answer')"
             size="lg"
             class="w-full"
           />
@@ -129,14 +131,14 @@ const onSubmit = async () => {
           class="flex justify-end items-center gap-2 mt-4 border-t border-gray-200 pt-4"
         >
           <UButton color="neutral" variant="solid" @click="closeModal">
-            Cancel
+            {{ t("Cancel") }}
           </UButton>
           <UButton
             type="submit"
             :loading="isSubmitting"
             :disabled="isSubmitting"
           >
-            Confirm
+            {{ t("Confirm") }}
           </UButton>
         </div>
       </UForm>

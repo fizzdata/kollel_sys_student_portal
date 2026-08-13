@@ -5,6 +5,7 @@ definePageMeta({
 
 const toast = useToast();
 const api = useApi();
+const { t } = useLocale();
 
 const currentPassshow = ref(false);
 const newPassShow = ref(false);
@@ -75,19 +76,19 @@ const submitSecurityQuestion = async () => {
 
   if (response?.success) {
     toast.add({
-      title: "Success",
-      description: response?.message || "Security Question Saved",
+      title: t("Success"),
+      description: response?.message || t("Security question saved"),
       color: "success",
       duration: 2000,
     });
   } else {
     toast.add({
-      title: "Failed",
+      title: t("Failed"),
       description:
         response?._data?.errors ||
         response?._data?.message ||
         response?.message ||
-        "Failed to save security question",
+        t("Failed to save security question"),
       color: "error",
       duration: 2000,
     });
@@ -198,6 +199,7 @@ onMounted(() => {
               v-model="updatePasswordState.old_password"
               placeholder="Current Password"
               :type="currentPassshow ? 'text' : 'password'"
+              autocomplete="current-password"
               :ui="{ trailing: 'pe-1' }"
               class="w-full"
               size="lg"
@@ -224,6 +226,7 @@ onMounted(() => {
               v-model="updatePasswordState.password"
               placeholder="New Password"
               :type="newPassShow ? 'text' : 'password'"
+              autocomplete="new-password"
               :ui="{ trailing: 'pe-1' }"
               class="w-full"
               size="lg"
@@ -248,6 +251,7 @@ onMounted(() => {
               v-model="updatePasswordState.password_confirmation"
               placeholder="Confirm Password"
               :type="confirmPassShow ? 'text' : 'password'"
+              autocomplete="new-password"
               :ui="{ trailing: 'pe-1' }"
               class="w-full"
               size="lg"
@@ -291,11 +295,14 @@ onMounted(() => {
               class="size-4 text-gray-600"
             />
           </div>
-          <h3 class="text-lg font-medium text-gray-800">Security Question</h3>
+          <h3 class="text-lg font-medium text-gray-800">{{ t("Security Question") }}</h3>
         </div>
         <p class="mb-6 text-sm text-gray-500">
-          Used to verify your identity if you ever forget your password.
-          Choose a question and answer only you would know.
+          {{
+            t(
+              "Used to verify your identity if you ever forget your password. Choose a question and answer only you would know.",
+            )
+          }}
         </p>
 
         <UForm
@@ -304,19 +311,19 @@ onMounted(() => {
           class="space-y-4"
           @submit="submitSecurityQuestion"
         >
-          <UFormField label="Your Security Question" name="question">
+          <UFormField :label="t('Your Security Question')" name="question">
             <UInput
               v-model="securityQuestionState.question"
-              placeholder="e.g. What did I name my first bicycle?"
+              :placeholder="t('e.g. What did I name my first bicycle?')"
               size="lg"
               class="w-full"
             />
           </UFormField>
 
-          <UFormField label="Your Answer" name="answer">
+          <UFormField :label="t('Your Answer')" name="answer">
             <UInput
               v-model="securityQuestionState.answer"
-              placeholder="Enter your answer"
+              :placeholder="t('Enter your answer')"
               size="lg"
               class="w-full"
             />
@@ -329,7 +336,7 @@ onMounted(() => {
             block
             size="lg"
           >
-            Save Security Question
+            {{ t("Save Security Question") }}
           </UButton>
         </UForm>
       </UCard>

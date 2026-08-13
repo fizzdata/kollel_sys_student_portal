@@ -2,6 +2,7 @@ import * as yup from "yup";
 
 export const useSecurityQuestion = () => {
   const api = useApi();
+  const { t } = useLocale();
 
   const isLoading = ref(false);
   const isSubmitting = ref(false);
@@ -11,10 +12,12 @@ export const useSecurityQuestion = () => {
     answer: null,
   });
 
-  const schema = yup.object({
-    question: yup.string().min(1).required("Security question is required"),
-    answer: yup.string().min(1).required("Answer is required"),
-  });
+  const schema = computed(() =>
+    yup.object({
+      question: yup.string().required(t("Security question is required")),
+      answer: yup.string().required(t("Answer is required")),
+    }),
+  );
 
   const fetchQuestion = async () => {
     isLoading.value = true;
