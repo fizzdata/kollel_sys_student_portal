@@ -4,6 +4,7 @@ import { getDayOfWeek, yiddish_date } from "~/common/Gregorian_to_Hebrew.js";
 
 definePageMeta({ layout: "sidebar" });
 
+const { t } = useAppLocale();
 const api = useApi();
 const loading = ref(false);
 const balanceLoading = ref(false);
@@ -97,16 +98,16 @@ const fetchTransactionSetup = async () => {
 }));
     } else {
       toast.add({
-        title: "Error",
-        description: response?.message || "Failed to fetch transaction setup",
+        title: t("Error"),
+        description: response?.message || t("Failed to fetch transaction setup"),
         color: "error",
       });
     }
   } catch (error) {
     console.error("Setup fetch error:", error);
     toast.add({
-      title: "Error",
-      description: "An unexpected error occurred while fetching setup data",
+      title: t("Error"),
+      description: t("An unexpected error occurred while fetching setup data"),
       color: "error",
     });
   } finally {
@@ -129,16 +130,16 @@ const fetchTransactions = async (page = currentPage.value) => {
       transaction.value = response?.transaction || [];
     } else {
       toast.add({
-        title: "Error",
-        description: response?.message || "Failed to fetch Transactions",
+        title: t("Error"),
+        description: response?.message || t("Failed to fetch Transactions"),
         color: "error",
       });
     }
   } catch (error) {
     console.error("Fetch error:", error);
     toast.add({
-      title: "Error",
-      description: "An unexpected error occurred while fetching transactions",
+      title: t("Error"),
+      description: t("An unexpected error occurred while fetching transactions"),
       color: "error",
     });
   } finally {
@@ -165,8 +166,8 @@ const onSubmit = async (event) => {
 
     if (response?.success) {
       toast.add({
-        title: "Success",
-        description: response?.message || "Generate Check Successfully",
+        title: t("Success"),
+        description: response?.message || t("Generate Check Successfully"),
         color: "success",
         duration: 2000,
       });
@@ -182,16 +183,16 @@ const onSubmit = async (event) => {
       generateChecksModal.value = false;
     } else {
       toast.add({
-        title: "Error",
-        description: response?.message || "Failed to Generate Check",
+        title: t("Error"),
+        description: response?.message || t("Failed to Generate Check"),
         color: "error",
       });
     }
   } catch (error) {
     console.error("Fetch error:", error);
     toast.add({
-      title: "Error",
-      description: "An unexpected error occurred while generate check",
+      title: t("Error"),
+      description: t("An unexpected error occurred while generate check"),
       color: "error",
     });
   } finally {
@@ -211,8 +212,8 @@ const onTransferSubmit = async (event) => {
 
     if (response?.success) {
       toast.add({
-        title: "Success",
-        description: response?.message || "Transfer completed",
+        title: t("Success"),
+        description: response?.message || t("Transfer completed"),
         color: "success",
         duration: 2000,
       });
@@ -222,16 +223,16 @@ const onTransferSubmit = async (event) => {
       transferModal.value = false;
     } else {
       toast.add({
-        title: "Error",
-        description: response?.message || "Failed to transfer",
+        title: t("Error"),
+        description: response?.message || t("Failed to transfer"),
         color: "error",
       });
     }
   } catch (error) {
     console.error("Transfer error:", error);
     toast.add({
-      title: "Error",
-      description: "An unexpected error occurred while transferring",
+      title: t("Error"),
+      description: t("An unexpected error occurred while transferring"),
       color: "error",
     });
   } finally {
@@ -269,10 +270,10 @@ const balanceDisplay = computed(() => {
   return money(Number.isFinite(parsed) ? parsed : 0);
 });
 
-const columns = [
+const columns = computed(() => [
   {
     accessorKey: "date",
-    header: "Date",
+    header: t("Date"),
     meta: {
       class: {
         th: "w-40",
@@ -293,7 +294,7 @@ const columns = [
   },
   {
     accessorKey: "description",
-    header: "Description",
+    header: t("Description"),
     meta: {
       class: {
         th: "w-[45%]",
@@ -311,7 +312,7 @@ const columns = [
   },
   {
     accessorKey: "amount",
-    header: "Amount",
+    header: t("Amount"),
     meta: {
       class: {
         th: "w-20",
@@ -321,7 +322,7 @@ const columns = [
   },
   {
     accessorKey: "running_balance",
-    header: "Balance",
+    header: t("Balance"),
     meta: {
       class: {
         th: "w-24",
@@ -329,7 +330,7 @@ const columns = [
     },
     cell: ({ row }) => money(row.original.running_balance || 0),
   },
-];
+]);
 
 const handleChange = (event) => {
   const selectedValue =
@@ -349,27 +350,27 @@ const handleChange = (event) => {
     >
       <!-- Left Content -->
       <div class="space-y-1">
-        <h2 class="text-2xl font-semibold text-gray-900">Transactions</h2>
+        <h2 class="text-2xl font-semibold text-gray-900">{{ t("Transactions") }}</h2>
       </div>
 
       <div class="flex gap-2 self-start sm:self-auto">
         <UButton
           @click="transferModal = true"
           icon="i-lucide-arrow-right-left"
-          label="Transfer"
+          :label="t('Transfer')"
           size="lg"
         />
         <UButton
           @click="generateChecksModal = true"
           icon="i-lucide-banknote"
-          label="Create Check"
+          :label="t('Create Check')"
           size="lg"
         />
       </div>
     </div>
 
     <div class="mt-6 flex flex-col items-center justify-center text-center">
-      <p class="text-sm text-gray-500">Available Balance</p>
+      <p class="text-sm text-gray-500">{{ t("Available Balance") }}</p>
       <USkeleton v-if="balanceLoading" class="h-12 w-40 mt-1" />
       <p v-else class="text-5xl font-bold text-primary mt-1">
         {{ balanceDisplay }}
@@ -387,19 +388,19 @@ const handleChange = (event) => {
 
     <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
       <p class="text-sm text-gray-600">
-        Page {{ currentPage }} of {{ totalPages }}
-        ({{ totalTransactions }} transactions)
+        {{ t("Page") }} {{ currentPage }} {{ t("of") }} {{ totalPages }}
+        ({{ totalTransactions }} {{ t("transactions") }})
       </p>
 
       <div class="flex items-center gap-2">
         <UButton
-          label="Previous"
+          :label="t('Previous')"
           variant="outline"
           :disabled="loading || currentPage <= 1"
           @click="goToPreviousPage"
         />
         <UButton
-          label="Next"
+          :label="t('Next')"
           variant="outline"
           :disabled="loading || currentPage >= totalPages"
           @click="goToNextPage"
@@ -463,7 +464,7 @@ const handleChange = (event) => {
     <!-- Custom Header -->
     <template #header>
       <div class="flex justify-between w-full">
-        <h2 class="text-xl font-bold text-primary">Generate Check</h2>
+        <h2 class="text-xl font-bold text-primary">{{ t("Generate Check") }}</h2>
 
         <!-- Close Button -->
         <UButton
@@ -492,30 +493,30 @@ const handleChange = (event) => {
           @submit="onSubmit"
         >
           <div class="flex flex-col gap-4">
-           <UFormField label="Payee" name="payee">
+           <UFormField :label="t('Payee')" name="payee">
   <USelectMenu
   v-model="state.payee"
     :items="payeeOptions"
     value-key="value"
     label-key="label"
-  placeholder="Please Select"
+  :placeholder="t('Please Select')"
   searchable
   class="w-full"
   @update:model-value="handleChange"
 />
 </UFormField>
-            <UFormField label="Amount" name="amount">
+            <UFormField :label="t('Amount')" name="amount">
               <UInput
                 v-model="state.amount"
-                placeholder="Enter amount"
+                :placeholder="t('Enter amount')"
                 class="w-full"
                 size="lg"
               />
             </UFormField>
-            <UFormField label="Memo" name="memo">
+            <UFormField :label="t('Memo')" name="memo">
               <UInput
                 v-model="state.memo"
-                placeholder="Enter memo"
+                :placeholder="t('Enter memo')"
                 class="w-full"
                 size="lg"
                 :readonly="isDefaultMemoLocked"
@@ -535,14 +536,14 @@ const handleChange = (event) => {
                 }
               "
             >
-              Cancel
+              {{ t("Cancel") }}
             </UButton>
             <UButton
               type="submit"
               :loading="isSubmitting"
               :disabled="isSubmitting"
             >
-              Confirm
+              {{ t("Confirm") }}
             </UButton>
           </div>
         </UForm>
@@ -557,7 +558,7 @@ const handleChange = (event) => {
     >
     <template #header>
       <div class="flex justify-between w-full">
-        <h2 class="text-xl font-bold text-primary">Transfer To Student</h2>
+        <h2 class="text-xl font-bold text-primary">{{ t("Transfer To Student") }}</h2>
 
         <UButton
           size="sm"
@@ -585,31 +586,31 @@ const handleChange = (event) => {
           @submit="onTransferSubmit"
         >
           <div class="flex flex-col gap-4">
-           <UFormField label="Student" name="transfer_to_student_id">
+           <UFormField :label="t('Student')" name="transfer_to_student_id">
   <USelectMenu
   v-model="transferState.transfer_to_student_id"
     :items="transferStudentOptions"
     value-key="value"
     label-key="label"
-  placeholder="Please Select"
+  :placeholder="t('Please Select')"
   searchable
   class="w-full"
 />
 </UFormField>
 
-            <UFormField label="Amount" name="amount">
+            <UFormField :label="t('Amount')" name="amount">
               <UInput
                 v-model="transferState.amount"
-                placeholder="Enter amount"
+                :placeholder="t('Enter amount')"
                 class="w-full"
                 size="lg"
               />
             </UFormField>
 
-            <UFormField label="Memo" name="memo">
+            <UFormField :label="t('Memo')" name="memo">
               <UInput
                 v-model="transferState.memo"
-                placeholder="Enter memo"
+                :placeholder="t('Enter memo')"
                 class="w-full"
                 size="lg"
               />
@@ -629,14 +630,14 @@ const handleChange = (event) => {
                 }
               "
             >
-              Cancel
+              {{ t("Cancel") }}
             </UButton>
             <UButton
               type="submit"
               :loading="isTransferSubmitting"
               :disabled="isTransferSubmitting"
             >
-              Confirm
+              {{ t("Confirm") }}
             </UButton>
           </div>
         </UForm>

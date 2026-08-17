@@ -9,21 +9,22 @@ const toast = useToast();
 const isSubmitting = ref(false);
 const route = useRoute();
 const org_pin = route.query.org_pin;
+const { locale, toggleLocale, t } = useAppLocale();
 const schema = yup.object({
   current: yup
     .string()
-    .min(8, "Must be at least 8 characters")
-    .required("Password is required"),
+    .min(8, t("Must be at least 8 characters"))
+    .required(t("Password is required")),
 
   password: yup
     .string()
-    .min(8, "Must be at least 8 characters")
-    .required("Password is required"),
+    .min(8, t("Must be at least 8 characters"))
+    .required(t("Password is required")),
 
   confirmed: yup
     .string()
-    .oneOf([yup.ref("password")], "Passwords must match")
-    .required("Confirm Password is required"),
+    .oneOf([yup.ref("password")], t("Passwords must match"))
+    .required(t("Confirm Password is required")),
 });
 
 const state = reactive({
@@ -50,18 +51,18 @@ const onSubmit = async (event) => {
 
       loginResetForm();
       toast.add({
-        title: "Success",
-        description: response?.message || "Password Updated Successfully",
+        title: t("Success"),
+        description: response?.message || t("Password Updated Successfully"),
         color: "success",
         duration: 2000,
       });
     } else {
       toast.add({
-        title: "Failed",
+        title: t("Failed"),
         description:
           response?._data.errors ||
           response?._data.message ||
-          "Failed to Login",
+          t("Failed to Login"),
         color: "error",
         duration: 2000,
       });
@@ -75,6 +76,15 @@ const onSubmit = async (event) => {
 </script>
 
 <template>
+  <!-- Language Toggle -->
+  <button
+    type="button"
+    class="fixed top-4 end-4 z-50 rounded-full bg-white px-3 py-1.5 text-sm font-medium text-primary shadow ring-1 ring-gray-200 hover:bg-gray-50"
+    @click="toggleLocale"
+  >
+    {{ locale === "yi" ? "EN" : "יידיש" }}
+  </button>
+
   <div
     class="relative flex min-h-screen items-center justify-center bg-gray-50 px-4"
   >
@@ -91,13 +101,13 @@ const onSubmit = async (event) => {
       <!-- Brand -->
       <div class="mb-6 text-center">
         <h2 class="text-3xl font-bold text-primary">
-          Kollel System Student Portal
+          {{ t("Kollel System") }} {{ t("Student Portal") }}
         </h2>
       </div>
 
       <!-- Title -->
       <p class="my-6 text-center text-lg font-medium text-gray-800">
-        Update your Password
+        {{ t("Update your Password") }}
       </p>
 
       <!-- Form -->
@@ -107,10 +117,10 @@ const onSubmit = async (event) => {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Current Password" name="current">
+        <UFormField :label="t('Current Password')" name="current">
           <UInput
             v-model="state.current"
-            placeholder="Current Password"
+            :placeholder="t('Current Password')"
             :type="currentPassshow ? 'text' : 'password'"
             :ui="{ trailing: 'pe-1' }"
             class="w-full"
@@ -122,7 +132,7 @@ const onSubmit = async (event) => {
                 size="sm"
                 :icon="currentPassshow ? 'i-lucide-eye-off' : 'i-lucide-eye'"
                 :aria-label="
-                  currentPassshow ? 'Hide password' : 'Show password'
+                  currentPassshow ? t('Hide password') : t('Show password')
                 "
                 :aria-pressed="currentPassshow"
                 aria-controls="password"
@@ -132,10 +142,10 @@ const onSubmit = async (event) => {
           </UInput>
         </UFormField>
 
-        <UFormField label="New Password" name="password">
+        <UFormField :label="t('New Password')" name="password">
           <UInput
             v-model="state.password"
-            placeholder="New Password"
+            :placeholder="t('New Password')"
             :type="newPassshow ? 'text' : 'password'"
             :ui="{ trailing: 'pe-1' }"
             class="w-full"
@@ -146,7 +156,7 @@ const onSubmit = async (event) => {
                 variant="link"
                 size="sm"
                 :icon="newPassshow ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                :aria-label="newPassshow ? 'Hide password' : 'Show password'"
+                :aria-label="newPassshow ? t('Hide password') : t('Show password')"
                 :aria-pressed="newPassshow"
                 aria-controls="password"
                 @click="newPassshow = !newPassshow"
@@ -162,18 +172,18 @@ const onSubmit = async (event) => {
           block
           size="lg"
         >
-          Submit
+          {{ t("Submit") }}
         </UButton>
       </UForm>
 
       <!-- Footer -->
       <p class="mt-8 text-center text-sm text-gray-500">
-        Already have an account?
+        {{ t("Already have an account?") }}
         <ULink
           :to="`/?org_pin=${org_pin}`"
           class="font-semibold text-primary hover:text-gray-500"
         >
-          Login
+          {{ t("Login") }}
         </ULink>
       </p>
     </UCard>

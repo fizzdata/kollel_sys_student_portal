@@ -5,7 +5,7 @@ const show = ref(false);
 const toast = useToast();
 const api = useApi();
 const route = useRoute();
-const { locale, toggleLocale, t } = useLocale();
+const { locale, toggleLocale, t } = useAppLocale();
 const isSubmitting = ref(false);
 const token = useCookie("kollel_stundent_token");
 const student = useCookie("kollel_student");
@@ -370,7 +370,7 @@ const onSubmit = async (event) => {
                     variant="link"
                     size="sm"
                     :icon="show ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                    :aria-label="show ? 'Hide password' : 'Show password'"
+                    :aria-label="show ? t('Hide password') : t('Show password')"
                     :aria-pressed="show"
                     aria-controls="password"
                     @click="show = !show"

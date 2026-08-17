@@ -35,6 +35,7 @@ const formatMonthPercent = (p) => {
   return `${Math.round(p.percent)}%`;
 };
 
+const { t } = useAppLocale();
 const emit = defineEmits(["reload"]);
 const currentRange = ref({ from: null, to: null });
 const firstDate = ref(null);
@@ -85,39 +86,29 @@ const detailsRow = ref(null);
 const detailsType = ref(null);
 
 const details = computed(() => {
-  const row = detailsRow.value;
-  if (!row) return null;
-
-  const prefix = detailsType.value === "morning" ? "morning" : "afternoon";
-  const day = row[`${prefix}_day`] || row.day;
+  const punch = detailsRow.value;
+  if (!punch) return null;
 
   return {
     type: detailsType.value,
-    label: detailsType.value === "morning" ? "Morning Seder" : "Afternoon Seder",
-    day,
-    id: row[`${prefix}_id`],
-    session: row[`${prefix}_session`],
-    schedule_id: row[`${prefix}_schedule_id`],
-    in: row[`${prefix}_in`],
-    out: row[`${prefix}_out`],
-    percent: prefix === "morning" ? row.total_morning : row.total_afternoon,
-    retzifus: prefix === "morning" ? row.retzifus_morning : row.retzifus_evening,
-    question_in: row[`${prefix}_question_in`],
-    question_out: row[`${prefix}_question_out`],
-    status: is_editable(row[`${prefix}_id`], day, row[`${prefix}_session`]),
+    label: detailsType.value === "morning" ? t("Morning Seder") : t("Afternoon Seder"),
+    day: punch.day,
+    id: punch.id,
+    session: punch.session,
+    session_id: punch.session_id,
+    schedule_id: punch.schedule_id,
+    in: punch.in,
+    out: punch.out,
+    percent: punch.percent,
+    retzifus: punch.retzifus,
+    question_in: punch.question_in,
+    question_out: punch.question_out,
+    status: is_editable(punch.id, punch.day, punch.session),
   };
 });
 
-const detailQuestions = computed(() => {
-  if (!details.value) return [];
-  return [
-    { dir: "in", label: "Clock-In Question", q: details.value.question_in },
-    { dir: "out", label: "Clock-Out Question", q: details.value.question_out },
-  ].filter((item) => item.q);
-});
-
-const openDetails = (current, type) => {
-  detailsRow.value = current;
+const openDetails = (punch, type) => {
+  detailsRow.value = punch;
   detailsType.value = type;
   closeQuestionEditor();
   detailsModal.value = true;
@@ -133,7 +124,7 @@ const editTimesFromDetails = () => {
 
   if (status === "p") {
     toast.add({
-      title: "This entry is Pending",
+      title: t("This entry is Pending"),
       color: "warning",
     });
     return;
@@ -141,16 +132,15 @@ const editTimesFromDetails = () => {
 
   if (status === "l") {
     toast.add({
-      title: "This entry is Locked",
+      title: t("This entry is Locked"),
       color: "info",
     });
     return;
   }
 
-  const row = detailsRow.value;
-  const type = detailsType.value;
+  const punch = detailsRow.value;
   closeDetails();
-  editClocking(row, type);
+  editClocking(punch);
 };
 
 // ---------- Answer / change a question response ----------
@@ -183,8 +173,8 @@ const answerOptions = computed(() => {
 const saveResponse = async () => {
   if (!selectedButton.value) {
     toast.add({
-      title: "Validation Error",
-      description: "Please select an answer",
+      title: t("Validation Error"),
+      description: t("Please select an answer"),
       color: "error",
     });
     return;
@@ -212,8 +202,8 @@ const saveResponse = async () => {
 
     if (response?.success) {
       toast.add({
-        title: "Success",
-        description: response?.message || "Response saved",
+        title: t("Success"),
+        description: response?.message || t("Response saved"),
         color: "success",
         duration: 2000,
       });
@@ -221,16 +211,16 @@ const saveResponse = async () => {
       emit("reload", currentRange.value);
     } else {
       toast.add({
-        title: "Failed",
-        description: response?.message || "Failed to save response",
+        title: t("Failed"),
+        description: response?.message || t("Failed to save response"),
         color: "error",
       });
     }
   } catch (error) {
     console.error("Response save error:", error);
     toast.add({
-      title: "Error",
-      description: "An unexpected error occurred while saving the response",
+      title: t("Error"),
+      description: t("An unexpected error occurred while saving the response"),
       color: "error",
     });
   } finally {
@@ -238,65 +228,41 @@ const saveResponse = async () => {
   }
 };
 
-// does this session have a question the student still needs to answer?
-const hasUnanswered = (row, type) => {
-  const prefix = type === "morning" ? "morning" : "afternoon";
-  return ["in", "out"].some(
-    (dir) => row[`${prefix}_question_${dir}`]?.can_answer,
-  );
-};
+// does this punch have a question the student still needs to answer?
+const hasUnanswered = (punch) =>
+  ["in", "out"].some((dir) => punch[`question_${dir}`]?.can_answer);
 
-// the session's questions, for the list view
-const questionsFor = (row, type) => {
-  const prefix = type === "morning" ? "morning" : "afternoon";
-  return [
-    { dir: "in", label: "In", q: row[`${prefix}_question_in`] },
-    { dir: "out", label: "Out", q: row[`${prefix}_question_out`] },
+// a punch's questions, for the list view
+const questionsFor = (punch) =>
+  [
+    { dir: "in", label: t("In"), q: punch.question_in },
+    { dir: "out", label: t("Out"), q: punch.question_out },
   ].filter((item) => item.q);
-};
 
 // open the details modal with a question's answer editor already expanded
-const openDetailsWithQuestion = (row, type, dir) => {
-  openDetails(row, type);
-  const q =
-    dir === "in" ? details.value?.question_in : details.value?.question_out;
+const openDetailsWithQuestion = (punch, type, dir) => {
+  openDetails(punch, type);
+  const q = dir === "in" ? punch.question_in : punch.question_out;
   if (q && (q.can_answer || q.can_change)) {
     openQuestionEditor(dir, q);
   }
 };
 
-const deletePending = (clock, type) => {
-  const isMorning = type === "morning";
-
-  const prefix = isMorning ? "morning" : "afternoon";
-
-  let id = clock[`${prefix}_id`];
-  let day = clock[`${prefix}_day`];
-  let session = clock[`${prefix}_session`];
-
+const deletePending = (punch) => {
   const pendingId = props.pendingRequests.find((request) => {
-    if (id === null) {
-      return request.day === day && request.session === session;
+    if (punch.id === null) {
+      return request.day === punch.day && request.session === punch.session;
     } else {
-      return request.clocking_id === id;
+      return request.clocking_id === punch.id;
     }
   })?.id;
 
   selectedPendingToDelete.value = pendingId;
   deletePendingModal.value = true;
-  return;
 };
 
-function button_text(current, type) {
-  const isMorning = type === "morning";
-
-  const prefix = isMorning ? "morning" : "afternoon";
-
-  let id = current[`${prefix}_id`];
-  let day = current[`${prefix}_day`];
-  let session = current[`${prefix}_session`];
-
-  const status = is_editable(id, day, session);
+function button_text(punch) {
+  const status = is_editable(punch.id, punch.day, punch.session);
 
   if (status === "p") {
     return h(UIcon, {
@@ -329,31 +295,31 @@ const confirmDeletePending = async () => {
 
     if (response?.success) {
       toast.add({
-        title: "Success",
-        description: response?.message || "Pending Request Deleted",
+        title: t("Success"),
+        description: response?.message || t("Pending Request Deleted"),
         color: "success",
         duration: 2000,
       });
       emit("reload", currentRange.value);
     } else if (response?._data?.message) {
       toast.add({
-        title: "Failed",
+        title: t("Failed"),
         description: response._data.message,
         color: "error",
       });
     } else {
       toast.add({
-        title: "Failed",
+        title: t("Failed"),
         description:
-          response?.message || "Something went wrong. Please try again.",
+          response?.message || t("Something went wrong. Please try again."),
         color: "error",
       });
     }
   } catch (error) {
     console.error("Submission error:", error);
     toast.add({
-      title: "Error",
-      description: "An unexpected error occurred.",
+      title: t("Error"),
+      description: t("An unexpected error occurred."),
       color: "error",
     });
   } finally {
@@ -362,29 +328,16 @@ const confirmDeletePending = async () => {
     isSubmitting.value = false;
   }
 };
-const editClocking = (clock, type) => {
-  const isMorning = type === "morning";
+const editClocking = (punch) => {
+  state.in = punch.in === "-" ? null : convertTo24Hour(punch.in);
+  state.out = punch.out === "-" ? null : convertTo24Hour(punch.out);
 
-  const prefix = isMorning ? "morning" : "afternoon";
+  state.id = punch.id;
+  state.day = punch.day;
+  state.session = punch.session;
+  state.session_id = punch.session_id;
 
-  state.in =
-    clock[`${prefix}_in`] === "-"
-      ? null
-      : convertTo24Hour(clock[`${prefix}_in`]);
-
-  state.out =
-    clock[`${prefix}_out`] === "-"
-      ? null
-      : convertTo24Hour(clock[`${prefix}_out`]);
-
-  state.id = clock[`${prefix}_id`];
-  state.day = clock[`${prefix}_day`];
-  state.session = clock[`${prefix}_session`];
-  state.session_id = clock[`${prefix}_session_id`];
-
-  state.retzifus = isMorning
-    ? clock.retzifus_morning !== "NO"
-    : clock.retzifus_evening !== "NO";
+  state.retzifus = punch.retzifus !== "NO";
 
   editClockingModal.value = true;
 };
@@ -547,9 +500,9 @@ const onSubmit = async (event) => {
 
     if (response?.success) {
       toast.add({
-        title: "Success",
+        title: t("Success"),
         description: h("span", {
-          innerHTML: response?.message || "Schedule updated successfully",
+          innerHTML: response?.message || t("Schedule updated successfully"),
         }),
         color: "success",
         duration: 2000,
@@ -558,7 +511,7 @@ const onSubmit = async (event) => {
       emit("reload", currentRange.value);
     } else if (response?._data?.message) {
       toast.add({
-        title: "Failed",
+        title: t("Failed"),
         description: h("span", {
           innerHTML: response._data.message,
         }),
@@ -566,10 +519,10 @@ const onSubmit = async (event) => {
       });
     } else {
       toast.add({
-        title: "Failed",
+        title: t("Failed"),
         description: h("span", {
           innerHTML:
-            response?.message || "Something went wrong. Please try again.",
+            response?.message || t("Something went wrong. Please try again."),
         }),
 
         color: "error",
@@ -578,8 +531,8 @@ const onSubmit = async (event) => {
   } catch (error) {
     console.error("Submission error:", error);
     toast.add({
-      title: "Error",
-      description: "An unexpected error occurred.",
+      title: t("Error"),
+      description: t("An unexpected error occurred."),
       color: "error",
     });
   } finally {
@@ -602,7 +555,7 @@ watch(() => props.items, generateCalendar, { deep: true });
         color="primary"
         variant="solid"
       >
-        Previous
+        {{ t("Previous") }}
       </UButton>
       <h2 class="text-2xl font-bold text-gray-900 text-center flex-1">
         {{ month_year() }}
@@ -613,7 +566,7 @@ watch(() => props.items, generateCalendar, { deep: true });
         color="primary"
         variant="solid"
       >
-        Next
+        {{ t("Next") }}
       </UButton>
     </div>
 
@@ -623,7 +576,7 @@ watch(() => props.items, generateCalendar, { deep: true });
       class="flex justify-center gap-6 mb-4 text-sm sm:text-base"
     >
       <div class="bg-gray-50 rounded-lg px-4 py-2 text-center">
-        <span class="text-gray-500">Morning Seder:</span>
+        <span class="text-gray-500">{{ t("Morning Seder") }}:</span>
         <span class="font-bold text-gray-900 ml-1">
           {{ formatMonthPercent(monthPercentages.morning) }}
         </span>
@@ -635,7 +588,7 @@ watch(() => props.items, generateCalendar, { deep: true });
         />
       </div>
       <div class="bg-gray-50 rounded-lg px-4 py-2 text-center">
-        <span class="text-gray-500">Afternoon Seder:</span>
+        <span class="text-gray-500">{{ t("Afternoon Seder") }}:</span>
         <span class="font-bold text-gray-900 ml-1">
           {{ formatMonthPercent(monthPercentages.afternoon) }}
         </span>
@@ -657,7 +610,7 @@ watch(() => props.items, generateCalendar, { deep: true });
         size="sm"
         @click="view = 'calendar'"
       >
-        Calendar
+        {{ t("Calendar") }}
       </UButton>
       <UButton
         icon="i-lucide-list"
@@ -666,7 +619,7 @@ watch(() => props.items, generateCalendar, { deep: true });
         size="sm"
         @click="view = 'list'"
       >
-        List
+        {{ t("List") }}
       </UButton>
     </div>
 
@@ -727,52 +680,48 @@ watch(() => props.items, generateCalendar, { deep: true });
                 <div
                   v-for="type in ['morning', 'afternoon']"
                   :key="type"
-                  class="flex items-center justify-center gap-2"
+                  class="flex flex-col items-center gap-1"
                 >
-                  <button
-                    @click="openDetails(day.data, type)"
-                    class="hover:underline cursor-pointer"
+                  <div
+                    v-for="(punch, pi) in day.data[type]"
+                    :key="`${type}-${pi}-${punch.id ?? 'new'}`"
+                    class="flex items-center justify-center gap-2"
                   >
-                    <div
-                      class="bg-blue-50 rounded flex items-center px-1"
-                      :class="{
-                        'bg-warning-100':
-                          is_editable(
-                            day.data[`${type}_id`],
-                            day.data[`${type}_day`],
-                            day.data[`${type}_session`],
-                          ) === 'p',
-                      }"
+                    <button
+                      @click="openDetails(punch, type)"
+                      class="hover:underline cursor-pointer"
                     >
-                      <component :is="button_text(day.data, type)" />
+                      <div
+                        class="bg-blue-50 rounded flex items-center px-1"
+                        :class="{
+                          'bg-warning-100':
+                            is_editable(punch.id, punch.day, punch.session) === 'p',
+                        }"
+                      >
+                        <component :is="button_text(punch)" />
 
-                      <span class="ml-1 text-gray-900">
-                        {{ day.data[`${type}_in`] }} –
-                        {{ day.data[`${type}_out`] }}
-                      </span>
+                        <span class="ml-1 text-gray-900">
+                          {{ punch.in }} –
+                          {{ punch.out }}
+                        </span>
 
-                      <UIcon
-                        v-if="hasUnanswered(day.data, type)"
-                        name="i-lucide-circle-help"
-                        class="w-4 h-4 text-warning-500 ml-1"
-                      />
-                    </div>
-                  </button>
+                        <UIcon
+                          v-if="hasUnanswered(punch)"
+                          name="i-lucide-circle-help"
+                          class="w-4 h-4 text-warning-500 ml-1"
+                        />
+                      </div>
+                    </button>
 
-                  <UButton
-                    v-if="
-                      is_editable(
-                        day.data[`${type}_id`],
-                        day.data[`${type}_day`],
-                        day.data[`${type}_session`],
-                      ) === 'p'
-                    "
-                    color="error"
-                    variant="soft"
-                    icon="i-lucide-trash-2"
-                    size="xs"
-                    @click="deletePending(day.data, type)"
-                  />
+                    <UButton
+                      v-if="is_editable(punch.id, punch.day, punch.session) === 'p'"
+                      color="error"
+                      variant="soft"
+                      icon="i-lucide-trash-2"
+                      size="xs"
+                      @click="deletePending(punch)"
+                    />
+                  </div>
                 </div>
               </div>
             </td>
@@ -786,120 +735,103 @@ watch(() => props.items, generateCalendar, { deep: true });
       <table class="min-w-full border-collapse table-auto">
         <thead>
           <tr class="bg-gray-200 text-xs sm:text-sm">
-            <th class="p-2 border border-gray-300 text-left">Date</th>
-            <th class="p-2 border border-gray-300 text-left">Seder</th>
-            <th class="p-2 border border-gray-300 text-left">In</th>
-            <th class="p-2 border border-gray-300 text-left">Out</th>
+            <th class="p-2 border border-gray-300 text-left">{{ t("Date") }}</th>
+            <th class="p-2 border border-gray-300 text-left">{{ t("Seder") }}</th>
+            <th class="p-2 border border-gray-300 text-left">{{ t("In") }}</th>
+            <th class="p-2 border border-gray-300 text-left">{{ t("Out") }}</th>
             <th class="p-2 border border-gray-300 text-left">%</th>
-            <th class="p-2 border border-gray-300 text-left">Retzifus</th>
-            <th class="p-2 border border-gray-300 text-left">Questions</th>
+            <th class="p-2 border border-gray-300 text-left">{{ t("Retzifus") }}</th>
+            <th class="p-2 border border-gray-300 text-left">{{ t("Questions") }}</th>
             <th class="p-2 border border-gray-300"></th>
           </tr>
         </thead>
         <tbody>
           <template v-for="day in listDays" :key="day.date">
-            <tr
-              v-for="type in ['morning', 'afternoon']"
-              :key="`${day.date}-${type}`"
-              class="text-xs sm:text-sm hover:bg-blue-50 cursor-pointer"
-              :class="{
-                'bg-warning-100':
-                  is_editable(
-                    day.data[`${type}_id`],
-                    day.data[`${type}_day`],
-                    day.data[`${type}_session`],
-                  ) === 'p',
-              }"
-              @click="openDetails(day.data, type)"
-            >
-              <td class="p-2 border border-gray-300">
-                <div class="font-medium">{{ g2h(day.date) }}</div>
-                <div class="text-gray-400 text-[10px] sm:text-xs">
-                  {{ day.date }}
-                </div>
-              </td>
-              <td class="p-2 border border-gray-300">
-                {{ type === "morning" ? "Morning" : "Afternoon" }}
-              </td>
-              <td class="p-2 border border-gray-300">
-                {{ day.data[`${type}_in`] }}
-              </td>
-              <td class="p-2 border border-gray-300">
-                {{ day.data[`${type}_out`] }}
-              </td>
-              <td class="p-2 border border-gray-300">
-                {{ type === "morning" ? day.data.total_morning : day.data.total_afternoon }}
-              </td>
-              <td class="p-2 border border-gray-300">
-                {{
-                  type === "morning"
-                    ? day.data.retzifus_morning
-                    : day.data.retzifus_evening
-                }}
-              </td>
-              <td class="p-2 border border-gray-300">
-                <div
-                  v-if="questionsFor(day.data, type).length"
-                  class="space-y-1"
-                >
-                  <div
-                    v-for="item in questionsFor(day.data, type)"
-                    :key="item.dir"
-                    class="flex items-center gap-2"
-                  >
-                    <UBadge color="neutral" variant="soft" size="sm">
-                      {{ item.label }}
-                    </UBadge>
-                    <span
-                      class="truncate max-w-40 sm:max-w-60"
-                      :title="item.q.question_text"
+            <template v-for="type in ['morning', 'afternoon']">
+              <tr
+                v-for="(punch, pi) in day.data[type]"
+                :key="`${day.date}-${type}-${pi}-${punch.id ?? 'new'}`"
+                class="text-xs sm:text-sm hover:bg-blue-50 cursor-pointer"
+                :class="{
+                  'bg-warning-100':
+                    is_editable(punch.id, punch.day, punch.session) === 'p',
+                }"
+                @click="openDetails(punch, type)"
+              >
+                <td class="p-2 border border-gray-300">
+                  <div class="font-medium">{{ g2h(day.date) }}</div>
+                  <div class="text-gray-400 text-[10px] sm:text-xs">
+                    {{ day.date }}
+                  </div>
+                </td>
+                <td class="p-2 border border-gray-300">
+                  {{ type === "morning" ? t("Morning") : t("Afternoon") }}
+                </td>
+                <td class="p-2 border border-gray-300">
+                  {{ punch.in }}
+                </td>
+                <td class="p-2 border border-gray-300">
+                  {{ punch.out }}
+                </td>
+                <td class="p-2 border border-gray-300">
+                  {{ punch.percent }}
+                </td>
+                <td class="p-2 border border-gray-300">
+                  {{ punch.retzifus }}
+                </td>
+                <td class="p-2 border border-gray-300">
+                  <div v-if="questionsFor(punch).length" class="space-y-1">
+                    <div
+                      v-for="item in questionsFor(punch)"
+                      :key="item.dir"
+                      class="flex items-center gap-2"
                     >
-                      {{ item.q.question_text }}
-                    </span>
-                    <span
-                      v-if="item.q.response"
-                      class="font-medium text-gray-900"
-                    >
-                      {{ item.q.response.response }}
-                    </span>
+                      <UBadge color="neutral" variant="soft" size="sm">
+                        {{ item.label }}
+                      </UBadge>
+                      <span
+                        class="truncate max-w-40 sm:max-w-60"
+                        :title="item.q.question_text"
+                      >
+                        {{ item.q.question_text }}
+                      </span>
+                      <span
+                        v-if="item.q.response"
+                        class="font-medium text-gray-900"
+                      >
+                        {{ item.q.response.response }}
+                      </span>
+                      <UButton
+                        v-if="item.q.can_answer || item.q.can_change"
+                        size="xs"
+                        color="primary"
+                        variant="soft"
+                        :icon="
+                          item.q.response
+                            ? 'i-lucide-square-pen'
+                            : 'i-lucide-message-circle-reply'
+                        "
+                        @click.stop="openDetailsWithQuestion(punch, type, item.dir)"
+                      />
+                    </div>
+                  </div>
+                  <span v-else class="text-gray-400">-</span>
+                </td>
+                <td class="p-2 border border-gray-300 text-center">
+                  <div class="flex items-center justify-center gap-1">
+                    <component :is="button_text(punch)" />
                     <UButton
-                      v-if="item.q.can_answer || item.q.can_change"
-                      size="xs"
-                      color="primary"
+                      v-if="is_editable(punch.id, punch.day, punch.session) === 'p'"
+                      color="error"
                       variant="soft"
-                      :icon="
-                        item.q.response
-                          ? 'i-lucide-square-pen'
-                          : 'i-lucide-message-circle-reply'
-                      "
-                      @click.stop="
-                        openDetailsWithQuestion(day.data, type, item.dir)
-                      "
+                      icon="i-lucide-trash-2"
+                      size="xs"
+                      @click.stop="deletePending(punch)"
                     />
                   </div>
-                </div>
-                <span v-else class="text-gray-400">-</span>
-              </td>
-              <td class="p-2 border border-gray-300 text-center">
-                <div class="flex items-center justify-center gap-1">
-                  <component :is="button_text(day.data, type)" />
-                  <UButton
-                    v-if="
-                      is_editable(
-                        day.data[`${type}_id`],
-                        day.data[`${type}_day`],
-                        day.data[`${type}_session`],
-                      ) === 'p'
-                    "
-                    color="error"
-                    variant="soft"
-                    icon="i-lucide-trash-2"
-                    size="xs"
-                    @click.stop="deletePending(day.data, type)"
-                  />
-                </div>
-              </td>
-            </tr>
+                </td>
+              </tr>
+            </template>
           </template>
         </tbody>
       </table>
@@ -910,7 +842,7 @@ watch(() => props.items, generateCalendar, { deep: true });
   <UModal v-model:open="detailsModal">
     <template #header>
       <div class="flex justify-between w-full">
-        <h2 class="text-xl font-bold text-primary">Session Details</h2>
+        <h2 class="text-xl font-bold text-primary">{{ t("Session Details") }}</h2>
         <UButton
           size="sm"
           variant="outline"
@@ -924,8 +856,8 @@ watch(() => props.items, generateCalendar, { deep: true });
 
     <template #body>
       <div v-if="details" class="space-y-4">
-        <!-- Date + session -->
-        <div>
+        <!-- Date + session, centered at the top -->
+        <div class="text-center">
           <p class="font-semibold text-gray-900">
             {{ g2h(details.day) }}
             <span class="text-gray-400 text-sm">({{ details.day }})</span>
@@ -933,74 +865,158 @@ watch(() => props.items, generateCalendar, { deep: true });
           <p class="text-sm text-gray-600">{{ details.label }}</p>
         </div>
 
-        <!-- Times / percent / retzifus -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-          <div class="bg-gray-50 rounded-lg p-2">
-            <p class="text-xs text-gray-500">In</p>
-            <p class="font-medium text-gray-900">{{ details.in }}</p>
+        <!-- Clock-In question -->
+        <div
+          v-if="details.question_in"
+          class="border border-gray-200 rounded-lg p-3 space-y-2"
+        >
+          <UBadge color="neutral" variant="soft" size="sm">
+            {{ t("Clock-In Question") }}
+          </UBadge>
+
+          <p
+            class="whitespace-normal break-words leading-snug font-medium text-gray-900"
+          >
+            {{ details.question_in.question_text }}
+          </p>
+
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-sm">
+              <span class="text-gray-500">{{ t("Answer") }}:</span>
+              <span
+                v-if="details.question_in.response"
+                class="font-medium text-gray-900"
+              >
+                {{ details.question_in.response.response }}
+              </span>
+            </p>
+
+            <UButton
+              v-if="
+                (details.question_in.can_answer ||
+                  details.question_in.can_change) &&
+                activeQuestion?.dir !== 'in'
+              "
+              :label="details.question_in.response ? t('Change') : t('Answer')"
+              :icon="
+                details.question_in.response
+                  ? 'i-lucide-square-pen'
+                  : 'i-lucide-message-circle-reply'
+              "
+              size="sm"
+              color="primary"
+              variant="soft"
+              @click="openQuestionEditor('in', details.question_in)"
+            />
           </div>
-          <div class="bg-gray-50 rounded-lg p-2">
-            <p class="text-xs text-gray-500">Out</p>
-            <p class="font-medium text-gray-900">{{ details.out }}</p>
-          </div>
-          <div class="bg-gray-50 rounded-lg p-2">
-            <p class="text-xs text-gray-500">Percent</p>
-            <p class="font-medium text-gray-900">{{ details.percent }}</p>
-          </div>
-          <div class="bg-gray-50 rounded-lg p-2">
-            <p class="text-xs text-gray-500">Retzifus</p>
-            <p class="font-medium text-gray-900">{{ details.retzifus }}</p>
+
+          <!-- inline answer editor -->
+          <div
+            v-if="activeQuestion?.dir === 'in'"
+            class="border-t border-gray-200 pt-3 space-y-3"
+          >
+            <URadioGroup v-model="selectedButton" :items="answerOptions" />
+
+            <div class="flex justify-end items-center gap-2">
+              <UButton
+                color="neutral"
+                variant="solid"
+                size="sm"
+                :label="t('Cancel')"
+                @click="closeQuestionEditor"
+              />
+              <UButton
+                size="sm"
+                :loading="isSavingResponse"
+                :disabled="isSavingResponse"
+                :label="t('Save')"
+                @click="saveResponse"
+              />
+            </div>
           </div>
         </div>
 
-        <!-- Questions -->
-        <div v-if="detailQuestions.length" class="space-y-3">
-          <h3 class="font-semibold text-gray-900">Questions</h3>
+        <!-- Times / percent / retzifus, with the Edit Times button beside them -->
+        <div
+          class="flex flex-col sm:flex-row sm:items-center gap-3 border-t border-gray-200 pt-4"
+        >
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm flex-1">
+            <div class="bg-gray-50 rounded-lg p-2">
+              <p class="text-xs text-gray-500">{{ t("In") }}</p>
+              <p class="font-medium text-gray-900">{{ details.in }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-2">
+              <p class="text-xs text-gray-500">{{ t("Out") }}</p>
+              <p class="font-medium text-gray-900">{{ details.out }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-2">
+              <p class="text-xs text-gray-500">{{ t("Percent") }}</p>
+              <p class="font-medium text-gray-900">{{ details.percent }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-2">
+              <p class="text-xs text-gray-500">{{ t("Retzifus") }}</p>
+              <p class="font-medium text-gray-900">{{ details.retzifus }}</p>
+            </div>
+          </div>
 
-          <div
-            v-for="item in detailQuestions"
-            :key="item.dir"
-            class="border border-gray-200 rounded-lg p-3 space-y-2"
-          >
+          <UButton
+            icon="la:pen"
+            :label="t('Edit Times')"
+            color="primary"
+            variant="outline"
+            class="shrink-0"
+            @click="editTimesFromDetails"
+          />
+        </div>
+
+        <!-- Clock-Out question -->
+        <div v-if="details.question_out" class="space-y-3">
+          <h3 class="font-semibold text-gray-900">{{ t("Questions") }}</h3>
+
+          <div class="border border-gray-200 rounded-lg p-3 space-y-2">
             <UBadge color="neutral" variant="soft" size="sm">
-              {{ item.label }}
+              {{ t("Clock-Out Question") }}
             </UBadge>
 
             <p
               class="whitespace-normal break-words leading-snug font-medium text-gray-900"
             >
-              {{ item.q.question_text }}
+              {{ details.question_out.question_text }}
             </p>
 
             <div class="flex items-center justify-between gap-2">
               <p class="text-sm">
-                <span class="text-gray-500">Answer:</span>
-                <span v-if="item.q.response" class="font-medium text-gray-900">
-                  {{ item.q.response.response }}
+                <span class="text-gray-500">{{ t("Answer") }}:</span>
+                <span
+                  v-if="details.question_out.response"
+                  class="font-medium text-gray-900"
+                >
+                  {{ details.question_out.response.response }}
                 </span>
               </p>
 
               <UButton
                 v-if="
-                  (item.q.can_answer || item.q.can_change) &&
-                  activeQuestion?.dir !== item.dir
+                  (details.question_out.can_answer ||
+                    details.question_out.can_change) &&
+                  activeQuestion?.dir !== 'out'
                 "
-                :label="item.q.response ? 'Change' : 'Answer'"
+                :label="details.question_out.response ? t('Change') : t('Answer')"
                 :icon="
-                  item.q.response
+                  details.question_out.response
                     ? 'i-lucide-square-pen'
                     : 'i-lucide-message-circle-reply'
                 "
                 size="sm"
                 color="primary"
                 variant="soft"
-                @click="openQuestionEditor(item.dir, item.q)"
+                @click="openQuestionEditor('out', details.question_out)"
               />
             </div>
 
             <!-- inline answer editor -->
             <div
-              v-if="activeQuestion?.dir === item.dir"
+              v-if="activeQuestion?.dir === 'out'"
               class="border-t border-gray-200 pt-3 space-y-3"
             >
               <URadioGroup v-model="selectedButton" :items="answerOptions" />
@@ -1010,32 +1026,19 @@ watch(() => props.items, generateCalendar, { deep: true });
                   color="neutral"
                   variant="solid"
                   size="sm"
-                  label="Cancel"
+                  :label="t('Cancel')"
                   @click="closeQuestionEditor"
                 />
                 <UButton
                   size="sm"
                   :loading="isSavingResponse"
                   :disabled="isSavingResponse"
-                  label="Save"
+                  :label="t('Save')"
                   @click="saveResponse"
                 />
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- Edit times -->
-        <div
-          class="flex justify-end items-center gap-2 border-t border-gray-200 pt-4"
-        >
-          <UButton
-            icon="la:pen"
-            label="Edit Times"
-            color="primary"
-            variant="outline"
-            @click="editTimesFromDetails"
-          />
         </div>
       </div>
     </template>
@@ -1046,7 +1049,7 @@ watch(() => props.items, generateCalendar, { deep: true });
     <!-- Custom Header -->
     <template #header>
       <div class="flex justify-between w-full">
-        <h2 class="text-xl font-bold text-primary">Edit Clocking</h2>
+        <h2 class="text-xl font-bold text-primary">{{ t("Edit Clocking") }}</h2>
 
         <!-- Close Button -->
         <UButton
@@ -1069,7 +1072,7 @@ watch(() => props.items, generateCalendar, { deep: true });
     <template #body>
       <UForm :state="state" class="space-y-4" @submit="onSubmit">
         <div class="grid grid-cols-2 my-6 place-items-center">
-          <UFormField label="In" class="flex gap-4 items-center">
+          <UFormField :label="t('In')" class="flex gap-4 items-center">
             <input
               v-model="state.in"
               type="time"
@@ -1080,7 +1083,7 @@ watch(() => props.items, generateCalendar, { deep: true });
               required
             />
           </UFormField>
-          <UFormField label="Out" class="flex gap-4 items-center">
+          <UFormField :label="t('Out')" class="flex gap-4 items-center">
             <input
               v-model="state.out"
               type="time"
@@ -1093,10 +1096,10 @@ watch(() => props.items, generateCalendar, { deep: true });
           </UFormField>
         </div>
 
-        <UFormField label="Notes" name="notes">
+        <UFormField :label="t('Notes')" name="notes">
           <UTextarea
             v-model="state.notes"
-            placeholder="Enter your notes..."
+            :placeholder="t('Enter your notes...')"
             class="w-full"
             required
           />
@@ -1114,14 +1117,14 @@ watch(() => props.items, generateCalendar, { deep: true });
               }
             "
           >
-            Cancel
+            {{ t("Cancel") }}
           </UButton>
           <UButton
             type="submit"
             :loading="isSubmitting"
             :disabled="isSubmitting"
           >
-            Confirm
+            {{ t("Confirm") }}
           </UButton>
         </div>
       </UForm>
@@ -1130,7 +1133,7 @@ watch(() => props.items, generateCalendar, { deep: true });
 
   <UModal
     v-model:open="deletePendingModal"
-    title="Confirm Delete Pending Request"
+    :title="t('Confirm Delete Pending Request')"
     :close="{
       color: 'primary',
       variant: 'outline',
@@ -1139,7 +1142,7 @@ watch(() => props.items, generateCalendar, { deep: true });
   >
     <template #body>
       <div>
-        <p>Are you sure you want to delete this pending request?</p>
+        <p>{{ t("Are you sure you want to delete this pending request?") }}</p>
       </div>
       <div class="flex gap-2 justify-end items-center">
         <UButton
@@ -1152,7 +1155,7 @@ watch(() => props.items, generateCalendar, { deep: true });
             }
           "
         >
-          Cancel
+          {{ t("Cancel") }}
         </UButton>
         <UButton
           color="error"
@@ -1162,7 +1165,7 @@ watch(() => props.items, generateCalendar, { deep: true });
           :disabled="isSubmitting"
           @click="confirmDeletePending()"
         >
-          Delete
+          {{ t("Delete") }}
         </UButton>
       </div>
     </template>

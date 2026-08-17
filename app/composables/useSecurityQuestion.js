@@ -2,7 +2,7 @@ import * as yup from "yup";
 
 export const useSecurityQuestion = () => {
   const api = useApi();
-  const { t } = useLocale();
+  const { t } = useAppLocale();
 
   const isLoading = ref(false);
   const isSubmitting = ref(false);

@@ -3,6 +3,7 @@ import { secondsToAmPm, secondsToPercent } from "~/common/common";
 
 definePageMeta({ layout: "sidebar" });
 
+const { t } = useAppLocale();
 const api = useApi();
 const clockings = ref([]);
 const date_from = ref(30);
@@ -27,74 +28,59 @@ const percentFor = (s) => {
   return secondsToPercent(s.out - s.in, s.schedule_total);
 };
 
+// A day/session can have more than one clocking (e.g. clocked out and back in
+// mid-seder), so each session is an array of punches rather than a single in/out.
+const buildPunch = (s) => ({
+  id: s.id,
+  day: s.day,
+  session: s.session,
+  session_id: s.session_id,
+  schedule_id: s.schedule_id,
+  schedule_total: s.schedule_total,
+  in: secondsToAmPm(s.in),
+  out: secondsToAmPm(s.out),
+  in_seconds: s.in,
+  out_seconds: s.out,
+  retzifus: s.retzifus === 0 ? "NO" : "-",
+  percent: percentFor(s),
+  question_in: s.question_in,
+  question_out: s.question_out,
+});
+
+// no daily_session scheduled for this day/session at all
+const emptyPunch = () => ({
+  id: null,
+  day: "",
+  session: "",
+  session_id: "",
+  schedule_id: null,
+  schedule_total: null,
+  in: "-",
+  out: "-",
+  in_seconds: null,
+  out_seconds: null,
+  retzifus: "-",
+  percent: "-",
+  question_in: null,
+  question_out: null,
+});
+
 const normalizeClockings = (clockings) => {
   if (!clockings) return [];
 
   return Object.values(clockings).map((dayEntry) => {
-    // Normalize clocking to array
     const sessions = Array.isArray(dayEntry.clocking)
       ? dayEntry.clocking
       : Object.values(dayEntry.clocking || {});
 
-    const row = {
+    const morning = sessions.filter((s) => s.session === 1).map(buildPunch);
+    const afternoon = sessions.filter((s) => s.session === 2).map(buildPunch);
+
+    return {
       day: dayEntry.day,
-
-      morning_day: "",
-      morning_id: "",
-      morning_session: "",
-      morning_session_id: "",
-      morning_in: "-",
-      morning_out: "-",
-      retzifus_morning: "-",
-      total_morning: "-",
-      morning_schedule_id: null,
-      morning_question_in: null,
-      morning_question_out: null,
-
-      afternoon_day: "",
-      afternoon_id: "",
-      afternoon_session: "",
-      afternoon_session_id: "",
-      afternoon_in: "-",
-      afternoon_out: "-",
-      retzifus_evening: "-",
-      total_afternoon: "-",
-      afternoon_schedule_id: null,
-      afternoon_question_in: null,
-      afternoon_question_out: null,
+      morning: morning.length ? morning : [emptyPunch()],
+      afternoon: afternoon.length ? afternoon : [emptyPunch()],
     };
-
-    sessions.forEach((s) => {
-      if (s.session === 1) {
-        row.morning_in = secondsToAmPm(s.in);
-        row.morning_out = secondsToAmPm(s.out);
-        row.retzifus_morning = s.retzifus === 0 ? "NO" : "-";
-        row.total_morning = percentFor(s);
-        row.morning_day = s.day;
-        row.morning_id = s.id;
-        row.morning_session = s.session;
-        row.morning_session_id = s.session_id;
-        row.morning_schedule_id = s.schedule_id;
-        row.morning_question_in = s.question_in;
-        row.morning_question_out = s.question_out;
-      }
-
-      if (s.session === 2) {
-        row.afternoon_in = secondsToAmPm(s.in);
-        row.afternoon_out = secondsToAmPm(s.out);
-        row.retzifus_evening = s.retzifus === 0 ? "NO" : "-";
-        row.total_afternoon = percentFor(s);
-        row.afternoon_day = s.day;
-        row.afternoon_id = s.id;
-        row.afternoon_session = s.session;
-        row.afternoon_session_id = s.session_id;
-        row.afternoon_schedule_id = s.schedule_id;
-        row.afternoon_question_in = s.question_in;
-        row.afternoon_question_out = s.question_out;
-      }
-    });
-
-    return row;
   });
 };
 
@@ -138,7 +124,7 @@ onMounted(() => {
   <div class="relative">
     <UCard class="rounded-2xl shadow-sm">
       <div class="flex justify-between items-center gap-4">
-        <h2 class="text-xl font-bold">Clocking</h2>
+        <h2 class="text-xl font-bold">{{ t("Clocking") }}</h2>
         <!-- <div>
           <select
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"

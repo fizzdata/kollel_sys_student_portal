@@ -16,7 +16,7 @@ const toast = useToast();
 const saveOrgPin = useCookie("kollel_sys_org_pin");
 const route = useRoute();
 const org_pin = route.query.org_pin ?? saveOrgPin.value;
-const { t } = useLocale();
+const { t } = useAppLocale();
 
 const { step, question, state, isSubmitting, apiMessage, reset, requestQuestion, submitAnswer } =
   useResetPassword();

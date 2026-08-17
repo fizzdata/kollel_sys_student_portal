@@ -1,6 +1,7 @@
 <script setup>
 definePageMeta({ layout: "sidebar" });
 
+const { t } = useAppLocale();
 const loading = ref(false);
 const profileLoaded = ref(false);
 const toast = useToast();
@@ -42,7 +43,7 @@ const cameOnTimeLast = computed(() =>
 
 const wageGroupLabel = computed(() => {
   const groups = studentPortal.value?.groups;
-  if (!Array.isArray(groups) || !groups.length) return "N/A";
+  if (!Array.isArray(groups) || !groups.length) return t("N/A");
   return groups.map((group) => group?.name).filter(Boolean).join(", ");
 });
 
@@ -50,9 +51,9 @@ const pieValues = computed(() => [thisMonthPercent.value, lastMonthPercent.value
 
 const memberSince = computed(() => {
   const createdAt = studentPortal.value?.student?.created_at;
-  if (!createdAt) return "N/A";
+  if (!createdAt) return t("N/A");
   const date = new Date(createdAt);
-  if (Number.isNaN(date.getTime())) return "N/A";
+  if (Number.isNaN(date.getTime())) return t("N/A");
   return date.toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",
@@ -113,15 +114,15 @@ const fetchStudentInfo = async () => {
       profileLoaded.value = true;
     } else {
       toast.add({
-        title: "Error",
-        description: response?.message || "Failed to fetch dashboard data",
+        title: t("Error"),
+        description: response?.message || t("Failed to fetch dashboard data"),
         color: "error",
       });
     }
   } catch (error) {
     toast.add({
-      title: "Error",
-      description: "An unexpected error occurred while fetching dashboard data",
+      title: t("Error"),
+      description: t("An unexpected error occurred while fetching dashboard data"),
       color: "error",
     });
   } finally {
@@ -149,8 +150,8 @@ onMounted(async () => {
 
   <UAlert
     v-else-if="!profileLoaded || !studentPortal"
-    title="Unable to load dashboard"
-    description="Please refresh the page or try again later."
+    :title="t('Unable to load dashboard')"
+    :description="t('Please refresh the page or try again later.')"
     color="error"
     variant="soft"
     class="mb-6"
@@ -177,20 +178,20 @@ onMounted(async () => {
             :color="studentPortal?.student?.active ? 'success' : 'error'"
             variant="soft"
           >
-            {{ studentPortal?.student?.active ? "Active" : "Inactive" }}
+            {{ studentPortal?.student?.active ? t("Active") : t("Inactive") }}
           </UBadge>
         </div>
         <div class="mt-2 grid grid-cols-1 gap-2 text-sm">
           <p>
-            <span class="font-medium">Phone:</span>
-            {{ studentPortal?.student?.phone || "N/A" }}
+            <span class="font-medium">{{ t("Phone") }}:</span>
+            {{ studentPortal?.student?.phone || t("N/A") }}
           </p>
           <p>
-            <span class="font-medium">Address:</span>
-            {{ studentPortal?.student?.address || "N/A" }}
+            <span class="font-medium">{{ t("Address") }}:</span>
+            {{ studentPortal?.student?.address || t("N/A") }}
           </p>
           <p>
-            <span class="font-medium">Wage Group:</span>
+            <span class="font-medium">{{ t("Wage Group") }}:</span>
             {{ wageGroupLabel }}
           </p>
         </div>
@@ -209,7 +210,7 @@ onMounted(async () => {
         </div>
 
         <div class="flex-1">
-          <p class="text-sm text-gray-500 mb-1">Available Balance</p>
+          <p class="text-sm text-gray-500 mb-1">{{ t("Available Balance") }}</p>
           <p class="text-xl font-semibold">
             ${{ toNumber(studentPortal?.balance).toFixed(2) }}
           </p>
@@ -226,7 +227,7 @@ onMounted(async () => {
           <UIcon name="i-lucide-percent" class="size-4 text-amber-600" />
         </div>
         <div class="flex-1">
-          <p class="text-sm text-gray-500 mb-1">This Month vs Last</p>
+          <p class="text-sm text-gray-500 mb-1">{{ t("This Month vs Last") }}</p>
           <p
             class="text-xl font-semibold"
             :class="percentDiff >= 0 ? 'text-success' : 'text-error'"
@@ -246,11 +247,11 @@ onMounted(async () => {
           <UIcon name="i-lucide-clock" class="size-4 text-indigo-600" />
         </div>
         <div class="flex-1">
-          <p class="text-sm text-gray-500 mb-1">Came On Time</p>
+          <p class="text-sm text-gray-500 mb-1">{{ t("Came On Time") }}</p>
           <p class="text-xl font-semibold">
             {{ cameOnTimeThis.toFixed(0) }}%
             <span class="text-sm text-gray-500 ml-1">
-              (Last: {{ cameOnTimeLast.toFixed(0) }}%)
+              ({{ t("Last") }}: {{ cameOnTimeLast.toFixed(0) }}%)
             </span>
           </p>
         </div>
@@ -271,7 +272,7 @@ onMounted(async () => {
           />
         </div>
         <div>
-          <p class="text-sm text-gray-500">This Month</p>
+          <p class="text-sm text-gray-500">{{ t("This Month") }}</p>
           <p class="text-lg font-semibold">{{ thisMonthPercent.toFixed(2) }}%</p>
         </div>
       </div>
@@ -284,7 +285,7 @@ onMounted(async () => {
           <UIcon name="i-lucide-calendar-clock" class="size-4 text-gray-600" />
         </div>
         <div>
-          <p class="text-sm text-gray-500">Last Month</p>
+          <p class="text-sm text-gray-500">{{ t("Last Month") }}</p>
           <p class="text-lg font-semibold">{{ lastMonthPercent.toFixed(2) }}%</p>
         </div>
       </div>
@@ -307,7 +308,7 @@ onMounted(async () => {
           />
         </div>
         <div class="flex-1">
-          <p class="text-sm text-gray-500 mb-1">Pending Requests</p>
+          <p class="text-sm text-gray-500 mb-1">{{ t("Pending Requests") }}</p>
           <p class="text-xl font-semibold">{{ pendingRequestsCount }}</p>
         </div>
       </div>
@@ -328,7 +329,7 @@ onMounted(async () => {
           />
         </div>
         <div class="flex-1">
-          <p class="text-sm text-gray-500 mb-1">Unanswered Questions</p>
+          <p class="text-sm text-gray-500 mb-1">{{ t("Unanswered Questions") }}</p>
           <p class="text-xl font-semibold">{{ unansweredQuestionsCount }}</p>
         </div>
       </div>
@@ -343,7 +344,7 @@ onMounted(async () => {
           <UIcon name="i-lucide-user-check" class="size-4 text-sky-600" />
         </div>
         <div class="flex-1">
-          <p class="text-sm text-gray-500 mb-1">Member Since</p>
+          <p class="text-sm text-gray-500 mb-1">{{ t("Member Since") }}</p>
           <p class="text-xl font-semibold">{{ memberSince }}</p>
         </div>
       </div>
@@ -351,7 +352,7 @@ onMounted(async () => {
   </div>
 
   <UCard class="rounded-2xl my-6">
-    <h3 class="font-semibold mb-4">Monthly Percentage Comparison</h3>
+    <h3 class="font-semibold mb-4">{{ t("Monthly Percentage Comparison") }}</h3>
 
     <div class="mx-auto max-w-xs h-96">
       <StudentPercentPie :values="pieValues" />

@@ -5,7 +5,7 @@ definePageMeta({
 
 const toast = useToast();
 const api = useApi();
-const { t } = useLocale();
+const { t } = useAppLocale();
 
 const currentPassshow = ref(false);
 const newPassShow = ref(false);
@@ -44,19 +44,19 @@ const submitUpdatePassword = async () => {
 
   if (response?.success) {
     toast.add({
-      title: "Success",
-      description: response?.message || "Password Updated Successfully",
+      title: t("Success"),
+      description: response?.message || t("Password Updated Successfully"),
       color: "success",
       duration: 2000,
     });
   } else {
     toast.add({
-      title: "Failed",
+      title: t("Failed"),
       description:
         response?._data?.errors ||
         response?._data?.message ||
         response?.message ||
-        "Failed to update password",
+        t("Failed to update password"),
       color: "error",
       duration: 2000,
     });
@@ -104,7 +104,7 @@ onMounted(() => {
   <div class="space-y-6">
     <UCard class="rounded-2xl shadow-sm">
       <div class="flex justify-between items-center gap-4">
-        <h2 class="text-xl font-bold">Settings</h2>
+        <h2 class="text-xl font-bold">{{ t("Settings") }}</h2>
       </div>
     </UCard>
 
@@ -137,7 +137,7 @@ onMounted(() => {
               :color="profile?.student?.active ? 'success' : 'error'"
               variant="soft"
             >
-              {{ profile?.student?.active ? "Active" : "Inactive" }}
+              {{ profile?.student?.active ? t("Active") : t("Inactive") }}
             </UBadge>
           </div>
 
@@ -145,7 +145,7 @@ onMounted(() => {
             <p class="flex items-start gap-2">
               <UIcon name="i-lucide-user" class="size-4 mt-0.5 text-gray-400 shrink-0" />
               <span>
-                <span class="block font-bold text-gray-500">English Name</span>
+                <span class="block font-bold text-gray-500">{{ t("English Name") }}</span>
                 {{ profile?.student?.first_name || "-" }}
                 {{ profile?.student?.last_name || "" }}
               </span>
@@ -153,21 +153,21 @@ onMounted(() => {
             <p class="flex items-start gap-2">
               <UIcon name="i-lucide-phone" class="size-4 mt-0.5 text-gray-400 shrink-0" />
               <span>
-                <span class="block font-bold text-gray-500">Phone</span>
-                {{ profile?.student?.phone || "N/A" }}
+                <span class="block font-bold text-gray-500">{{ t("Phone") }}</span>
+                {{ profile?.student?.phone || t("N/A") }}
               </span>
             </p>
             <p class="flex items-start gap-2">
               <UIcon name="i-lucide-map-pin" class="size-4 mt-0.5 text-gray-400 shrink-0" />
               <span>
-                <span class="block font-bold text-gray-500">Address</span>
-                {{ profile?.student?.address || "N/A" }}
+                <span class="block font-bold text-gray-500">{{ t("Address") }}</span>
+                {{ profile?.student?.address || t("N/A") }}
               </span>
             </p>
             <p class="flex items-start gap-2">
               <UIcon name="i-lucide-briefcase" class="size-4 mt-0.5 text-gray-400 shrink-0" />
               <span>
-                <span class="block font-bold text-gray-500">Wage Group</span>
+                <span class="block font-bold text-gray-500">{{ t("Wage Group") }}</span>
                 {{ wageGroupLabel }}
               </span>
             </p>
@@ -185,7 +185,7 @@ onMounted(() => {
           >
             <UIcon name="i-lucide-lock" class="size-4 text-gray-600" />
           </div>
-          <h3 class="text-lg font-medium text-gray-800">Change Password</h3>
+          <h3 class="text-lg font-medium text-gray-800">{{ t("Change Password") }}</h3>
         </div>
 
         <UForm
@@ -194,10 +194,10 @@ onMounted(() => {
           class="space-y-4"
           @submit="submitUpdatePassword"
         >
-          <UFormField label="Current Password" name="old_password">
+          <UFormField :label="t('Current Password')" name="old_password">
             <UInput
               v-model="updatePasswordState.old_password"
-              placeholder="Current Password"
+              :placeholder="t('Current Password')"
               :type="currentPassshow ? 'text' : 'password'"
               autocomplete="current-password"
               :ui="{ trailing: 'pe-1' }"
@@ -211,7 +211,7 @@ onMounted(() => {
                   size="sm"
                   :icon="currentPassshow ? 'i-lucide-eye-off' : 'i-lucide-eye'"
                   :aria-label="
-                    currentPassshow ? 'Hide password' : 'Show password'
+                    currentPassshow ? t('Hide password') : t('Show password')
                   "
                   :aria-pressed="currentPassshow"
                   aria-controls="password"
@@ -221,10 +221,10 @@ onMounted(() => {
             </UInput>
           </UFormField>
 
-          <UFormField label="New Password" name="password">
+          <UFormField :label="t('New Password')" name="password">
             <UInput
               v-model="updatePasswordState.password"
-              placeholder="New Password"
+              :placeholder="t('New Password')"
               :type="newPassShow ? 'text' : 'password'"
               autocomplete="new-password"
               :ui="{ trailing: 'pe-1' }"
@@ -237,7 +237,7 @@ onMounted(() => {
                   variant="link"
                   size="sm"
                   :icon="newPassShow ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                  :aria-label="newPassShow ? 'Hide password' : 'Show password'"
+                  :aria-label="newPassShow ? t('Hide password') : t('Show password')"
                   :aria-pressed="newPassShow"
                   aria-controls="password"
                   @click="newPassShow = !newPassShow"
@@ -246,10 +246,10 @@ onMounted(() => {
             </UInput>
           </UFormField>
 
-          <UFormField label="Confirm Password" name="password_confirmation">
+          <UFormField :label="t('Confirm Password')" name="password_confirmation">
             <UInput
               v-model="updatePasswordState.password_confirmation"
-              placeholder="Confirm Password"
+              :placeholder="t('Confirm Password')"
               :type="confirmPassShow ? 'text' : 'password'"
               autocomplete="new-password"
               :ui="{ trailing: 'pe-1' }"
@@ -263,7 +263,7 @@ onMounted(() => {
                   size="sm"
                   :icon="confirmPassShow ? 'i-lucide-eye-off' : 'i-lucide-eye'"
                   :aria-label="
-                    confirmPassShow ? 'Hide password' : 'Show password'
+                    confirmPassShow ? t('Hide password') : t('Show password')
                   "
                   :aria-pressed="confirmPassShow"
                   aria-controls="password"
@@ -280,7 +280,7 @@ onMounted(() => {
             block
             size="lg"
           >
-            Update Password
+            {{ t("Update Password") }}
           </UButton>
         </UForm>
       </UCard>

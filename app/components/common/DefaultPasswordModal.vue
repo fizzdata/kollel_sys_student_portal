@@ -11,7 +11,7 @@ const isOpen = computed({
 });
 
 const toast = useToast();
-const { t } = useLocale();
+const { t } = useAppLocale();
 const step = ref("password");
 
 const newPassShow = ref(false);
@@ -145,7 +145,7 @@ const onSubmitSecurityQuestion = async () => {
                   variant="link"
                   size="sm"
                   :icon="newPassShow ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                  :aria-label="newPassShow ? 'Hide password' : 'Show password'"
+                  :aria-label="newPassShow ? t('Hide password') : t('Show password')"
                   @click="newPassShow = !newPassShow"
                 />
               </template>
@@ -169,7 +169,7 @@ const onSubmitSecurityQuestion = async () => {
                   size="sm"
                   :icon="confirmPassShow ? 'i-lucide-eye-off' : 'i-lucide-eye'"
                   :aria-label="
-                    confirmPassShow ? 'Hide password' : 'Show password'
+                    confirmPassShow ? t('Hide password') : t('Show password')
                   "
                   @click="confirmPassShow = !confirmPassShow"
                 />

@@ -15,7 +15,7 @@ import {
 const sidebarOpen = ref(false);
 const route = useRoute();
 const api = useApi();
-const { locale, toggleLocale } = useLocale();
+const { locale, toggleLocale, t } = useAppLocale();
 
 const token = useCookie("kollel_stundent_token");
 const student = useCookie("kollel_student");
@@ -36,7 +36,7 @@ let countdownTimer = null;
 const toast = useToast();
 const navigation = [
   { name: "Clocking", href: "/clocking", key: "clocking" },
-  { name: "Transaction", href: "/transaction", key: "transaction" },
+  { name: "Transactions", href: "/transaction", key: "transaction" },
   { name: "Settings", href: "/settings", key: "settings" },
 ];
 
@@ -99,8 +99,8 @@ const logout = async (isAutoLogout = false) => {
   try {
     if (isAutoLogout) {
       toast.add({
-        title: "Session Expiring",
-        description: "You were logged out due to inactivity.",
+        title: t("Session Expiring"),
+        description: t("You were logged out due to inactivity."),
         color: "warning",
         timeout: 2000,
       });
@@ -128,11 +128,11 @@ const logout = async (isAutoLogout = false) => {
 
     if (!response?._data?.success && !response?.success) {
       toast.add({
-        title: "Error",
+        title: t("Error"),
         description:
           response?.message ||
           response?._data?.message ||
-          `Something went wrong. Please try again later.`,
+          t("Something went wrong. Please try again later."),
         color: "red",
         timeout: 2000,
       });
@@ -202,12 +202,8 @@ watch(token, (value) => {
               K
             </div>
             <div class="flex flex-col">
-              <span class="text-lg font-bold text-gray-800"
-                >Kollel<span class="text-brand-600"> System</span></span
-              >
-              <span class="text-sm font-bold text-gray-800"
-                >Student<span class="text-brand-600"> Portal</span></span
-              >
+              <span class="text-lg font-bold text-gray-800">{{ t("Kollel System") }}</span>
+              <span class="text-sm font-bold text-gray-800">{{ t("Student Portal") }}</span>
             </div>
           </div>
         </div>
@@ -226,7 +222,7 @@ watch(token, (value) => {
                     'flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold transition-colors duration-200',
                   ]"
                 >
-                  {{ item?.name }}
+                  {{ t(item?.name) }}
                 </ULink>
               </li>
             </ul>
@@ -237,7 +233,7 @@ watch(token, (value) => {
           <UButton color="neutral" variant="outline" @click="toggleLocale">
             {{ locale === "yi" ? "EN" : "יידיש" }}
           </UButton>
-          <UButton @click="logout" class="ml-4"> Log Out </UButton>
+          <UButton @click="logout" class="ml-4">{{ t("Log Out") }}</UButton>
         </div>
       </nav>
 
@@ -254,7 +250,7 @@ watch(token, (value) => {
                 'flex items-center gap-x-3 rounded-md p-2 text-sm font-semibold transition-colors duration-200',
               ]"
             >
-              {{ item?.name }}
+              {{ t(item?.name) }}
             </ULink>
           </li>
         </ul>
@@ -267,19 +263,19 @@ watch(token, (value) => {
 
     <UModal v-model:open="inactivityWarningOpen" :dismissible="false">
       <template #header>
-        <h2 class="text-lg font-semibold">Session Timeout Warning</h2>
+        <h2 class="text-lg font-semibold">{{ t("Session Timeout Warning") }}</h2>
       </template>
 
       <template #body>
         <p class="text-sm text-gray-700">
-          You have been inactive for 30 seconds. You will be logged out in
-          {{ inactivityCountdown }} seconds.
+          {{ t("You have been inactive for 30 seconds. You will be logged out in") }}
+          {{ inactivityCountdown }} {{ t("seconds.") }}
         </p>
       </template>
 
       <template #footer>
         <div class="flex justify-end w-full">
-          <UButton color="primary" @click="resumeSession">I am still here</UButton>
+          <UButton color="primary" @click="resumeSession">{{ t("I am still here") }}</UButton>
         </div>
       </template>
     </UModal>

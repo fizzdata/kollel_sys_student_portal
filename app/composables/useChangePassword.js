@@ -7,7 +7,7 @@ const DEFAULT_PASSWORD = "0";
 
 export const useChangePassword = (isDefaultPassword = false) => {
   const api = useApi();
-  const { t } = useLocale();
+  const { t } = useAppLocale();
 
   const isSubmitting = ref(false);
   const state = reactive({

@@ -3,7 +3,7 @@ import yi from "~/i18n/yi.json";
 const dictionaries = { yi };
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
-export const useLocale = () => {
+export const useAppLocale = () => {
   const locale = useCookie("kollel_sys_locale", {
     default: () => "en",
     maxAge: ONE_YEAR,

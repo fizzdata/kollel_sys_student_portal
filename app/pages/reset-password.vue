@@ -5,6 +5,7 @@ const toast = useToast();
 const saveOrgPin = useCookie("kollel_sys_org_pin");
 const route = useRoute();
 const org_pin = route.query.org_pin ?? saveOrgPin.value;
+const { locale, toggleLocale, t } = useAppLocale();
 
 const { step, question, state, isSubmitting, apiMessage, requestQuestion, submitAnswer } =
   useResetPassword();
@@ -15,13 +16,13 @@ const schema = computed(() =>
       step.value === "phone"
         ? yup
             .string()
-            .matches(/^\+?[0-9]{7,15}$/, "Invalid phone number")
-            .required("Phone is required")
+            .matches(/^\+?[0-9]{7,15}$/, t("Invalid phone number"))
+            .required(t("Phone is required"))
         : yup.string().notRequired(),
 
     answer:
       step.value === "answer"
-        ? yup.string().required("Answer is required")
+        ? yup.string().required(t("Answer is required"))
         : yup.string().notRequired(),
   }),
 );
@@ -29,8 +30,8 @@ const schema = computed(() =>
 const onSubmit = async () => {
   if (!org_pin) {
     toast.add({
-      title: "Error",
-      description: "Organization PIN is missing in the URL.",
+      title: t("Error"),
+      description: t("Organization PIN is missing in the URL."),
       color: "error",
       duration: 2000,
     });
@@ -45,8 +46,8 @@ const onSubmit = async () => {
   if (response?.success) {
     if (isAnswerStep) {
       toast.add({
-        title: "Success",
-        description: apiMessage(response, "Password reset successfully!"),
+        title: t("Success"),
+        description: apiMessage(response, t("Password reset successfully!")),
         color: "success",
         duration: 3000,
       });
@@ -54,8 +55,8 @@ const onSubmit = async () => {
     }
   } else {
     toast.add({
-      title: "Failed",
-      description: apiMessage(response, "Something went wrong"),
+      title: t("Failed"),
+      description: apiMessage(response, t("Something went wrong")),
       color: "error",
       duration: 2000,
     });
@@ -63,6 +64,15 @@ const onSubmit = async () => {
 };
 </script>
 <template>
+  <!-- Language Toggle -->
+  <button
+    type="button"
+    class="fixed top-4 end-4 z-50 rounded-full bg-white px-3 py-1.5 text-sm font-medium text-primary shadow ring-1 ring-gray-200 hover:bg-gray-50"
+    @click="toggleLocale"
+  >
+    {{ locale === "yi" ? "EN" : "יידיש" }}
+  </button>
+
   <div
     class="relative flex min-h-screen items-center justify-center bg-gray-50 px-4"
   >
@@ -79,17 +89,17 @@ const onSubmit = async () => {
       <!-- Brand -->
       <div class="mb-6 text-center">
         <h2 class="text-3xl font-bold text-primary">
-          Kollel System Student Portal
+          {{ t("Kollel System") }} {{ t("Student Portal") }}
         </h2>
 
         <ULink to="http://fizzdata.com/" target="_blank" class="block">
-          <p class="mt-1 text-sm text-gray-500">by Fizz Data</p>
+          <p class="mt-1 text-sm text-gray-500">{{ t("by Fizz Data") }}</p>
         </ULink>
       </div>
 
       <!-- Title -->
       <p class="my-6 text-center text-lg font-medium text-gray-800">
-        Reset your password
+        {{ t("Reset your password") }}
       </p>
 
       <!-- Form -->
@@ -99,20 +109,20 @@ const onSubmit = async () => {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField v-if="step === 'phone'" label="Phone" name="phone">
+        <UFormField v-if="step === 'phone'" :label="t('Phone')" name="phone">
           <UInput
             v-model="state.phone"
-            placeholder="Enter your phone"
+            :placeholder="t('Enter your phone')"
             size="lg"
             class="w-full"
           />
         </UFormField>
 
-        <UFormField v-else label="Answer" name="answer">
+        <UFormField v-else :label="t('Answer')" name="answer">
           <p class="mb-2 text-sm text-gray-600">{{ question }}</p>
           <UInput
             v-model="state.answer"
-            placeholder="Enter your answer"
+            :placeholder="t('Enter your answer')"
             size="lg"
             class="w-full"
           />
@@ -125,17 +135,17 @@ const onSubmit = async () => {
           block
           size="lg"
         >
-          Submit
+          {{ t("Submit") }}
         </UButton>
       </UForm>
 
       <p class="mt-8 text-center text-sm text-gray-500">
-        Already have an account?
+        {{ t("Already have an account?") }}
         <ULink
           :to="`/?org_pin=${org_pin}`"
           class="font-semibold text-primary hover:text-gray-500"
         >
-          Login!
+          {{ t("Login!") }}
         </ULink>
       </p>
     </UCard>
