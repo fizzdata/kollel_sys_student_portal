@@ -283,7 +283,7 @@ const onSubmit = async (event) => {
           class="flex flex-col items-center justify-center"
         >
           <img
-            :src="`data:image/svg+xml;base64,${logoUrl}`"
+            :src="logoUrl"
             alt="Organization Logo"
             class="max-w-xs max-h-64 object-contain drop-shadow-2xl mb-8"
           />
@@ -316,7 +316,7 @@ const onSubmit = async (event) => {
             class="flex flex-col items-center justify-center"
           >
             <img
-              :src="`data:image/svg+xml;base64,${logoUrl}`"
+              :src="logoUrl"
               alt="Organization Logo"
               class="max-w-xs max-h-32 object-contain mb-4"
             />
