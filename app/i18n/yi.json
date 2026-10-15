@@ -65,7 +65,7 @@
 
   "Recommended: set up a security question so you can reset your own password if you ever forget it.": "רעקאמענדירט: שטעל אריין א זיכערהייט פראגע כדי דו זאלסט קענען טוישן דיין פאסווארד אויב דו פארגעסט עס.",
   "Your Security Question": "דיין זיכערהייט פראגע",
-  "e.g. What did I name my first bicycle?": "למשל: וויאזוי האב איך גערופן מיין ערשטע ביציקל?",
+  "'e.g. Where did you learn in Yeshiva Ketana?": "למשל: ווי האסטו געלערט אין ישיבה קטנה",
   "Your Answer": "דיין ענטפער",
   "Maybe Later": "אפשר שפעטער",
   "Save": "סעיוו",
@@ -189,5 +189,8 @@
   "Printing failed. Check that the printer is on and has paper.": "דרוקן איז דורכגעפאלן. קוק אז דער פרינטער איז אן און האט פאפיר.",
   "Could not confirm the check was sent to the printer.": "קען נישט באשטעטיגן אז דער טשעק איז געשיקט געווארן צום פרינטער.",
   "Print again?": "דרוקן נאכאמאל?",
+  "Did the check print correctly?": "האט דער טשעק ריכטיג געדרוקט?",
+  "Yes": "יא",
+  "No, print again": "ניין, דרוק נאכאמאל",
   "Did the check print correctly? OK = yes, Cancel = print again": "האט דער טשעק ריכטיג געדרוקט? OK = יא, Cancel = דרוק נאכאמאל"
 }

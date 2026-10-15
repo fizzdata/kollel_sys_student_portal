@@ -157,12 +157,35 @@ const goToNextPage = async () => {
   await fetchTransactions(currentPage.value + 1);
 };
 const printing = ref(false);
+const printAskOpen = ref(false);
+const printAskReason = ref("");
+const PRINT_ASK_TIMEOUT_MS = 60000;
+let printAskResolve = null;
+let printAskTimer = null;
+
+const answerPrintAsk = (answer) => {
+  clearTimeout(printAskTimer);
+  printAskOpen.value = false;
+  const resolve = printAskResolve;
+  printAskResolve = null;
+  resolve?.(answer);
+};
+
+// Resolves to "yes" | "reprint" | "cancel". No answer within the timeout counts as "cancel".
+const askPrinted = (reason = "") =>
+  new Promise((resolve) => {
+    printAskReason.value = reason;
+    printAskResolve = resolve;
+    printAskOpen.value = true;
+    printAskTimer = setTimeout(() => answerPrintAsk("cancel"), PRINT_ASK_TIMEOUT_MS);
+  });
 
 // Kiosk: silent print + spooler confirmation. Browser: print dialog + user confirmation.
 const handlePrint = async (pdf) => {
   printing.value = true;
   try {
     for (;;) {
+      let answer;
       if (isTauriApp()) {
         toast.add({ title: t("Printing check..."), color: "info", duration: 3000 });
         const r = await printCheckNative(pdf);
@@ -179,17 +202,18 @@ const handlePrint = async (pdf) => {
           return;
         }
         const reason =
-          r.outcome === "error"
+          (r.outcome === "error"
             ? t("Printing failed. Check that the printer is on and has paper.")
-            : t("Could not confirm the check was sent to the printer.");
-        toast.add({ title: t("Error"), description: reason, color: "error", duration: 8000 });
-        if (!window.confirm(`${reason}\n\n${t("Print again?")}`)) return;
+            : t("Could not confirm the check was sent to the printer.")) +
+          (r.detail ? ` (${r.detail})` : "");
+        console.warn("print result", r);
+        // Never reprint automatically: the spooler check can miss a job that did print.
+        answer = await askPrinted(reason);
       } else {
         $printJS({ printable: pdf, type: "pdf", base64: true });
-        if (window.confirm(t("Did the check print correctly? OK = yes, Cancel = print again"))) {
-          return;
-        }
+        answer = await askPrinted();
       }
+      if (answer !== "reprint") return;
     }
   } finally {
     printing.value = false;
@@ -679,6 +703,29 @@ const handleChange = (event) => {
         </UForm>
       </div>
     </template>
+    </UModal>
+
+    <!-- Print confirmation: yes / no, reprint / cancel (timeout = cancel) -->
+    <UModal
+      :open="printAskOpen"
+      :dismissible="false"
+      :close="false"
+      :title="t('Did the check print correctly?')"
+    >
+      <template #body>
+        <p v-if="printAskReason" class="mb-4 text-sm">{{ printAskReason }}</p>
+        <div class="flex flex-wrap gap-2 justify-end">
+          <UButton color="success" @click="answerPrintAsk('yes')">
+            {{ t("Yes") }}
+          </UButton>
+          <UButton color="warning" @click="answerPrintAsk('reprint')">
+            {{ t("No, print again") }}
+          </UButton>
+          <UButton color="neutral" variant="outline" @click="answerPrintAsk('cancel')">
+            {{ t("Cancel") }}
+          </UButton>
+        </div>
+      </template>
     </UModal>
   </div>
 </template>

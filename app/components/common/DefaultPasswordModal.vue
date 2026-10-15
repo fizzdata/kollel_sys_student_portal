@@ -210,7 +210,7 @@ const onSubmitSecurityQuestion = async () => {
           <UFormField :label="t('Your Security Question')" name="question">
             <UInput
               v-model="securityQuestionState.question"
-              :placeholder="t('e.g. What did I name my first bicycle?')"
+              :placeholder="t('e.g. Where did you learn in Yeshiva Ketana?')"
               size="lg"
               class="w-full"
             />
