@@ -7,6 +7,10 @@
 dist
 .output
 
+# Tauri
+src-tauri/target
+src-tauri/gen/schemas
+
 # Node dependencies
 node_modules
 

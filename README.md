@@ -1,5 +1,9 @@
 # Nuxt Minimal Starter
 
+> **Windows kiosk (Tauri):** see [docs/kiosk-windows.md](docs/kiosk-windows.md) for building and running the kiosk app.
+> **Updater backend response:** see [docs/update-endpoint-spec.md](docs/update-endpoint-spec.md).
+> Normal browser development (`npm run dev`) is unchanged.
+
 Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
 
 ## Setup

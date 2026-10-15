@@ -7,13 +7,18 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "kiosk:dev": "cross-env KIOSK_BUILD=1 nuxt dev",
+    "kiosk:generate": "cross-env KIOSK_BUILD=1 nuxt generate",
+    "tauri": "tauri"
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",
     "@iconify-json/la": "^1.2.1",
     "@iconify-json/lucide": "^1.2.121",
     "@nuxt/ui": "^4.3.0",
+    "@tauri-apps/plugin-process": "^2.4.0",
+    "@tauri-apps/plugin-updater": "^2.14.0",
     "chart.js": "^4.5.1",
     "nuxt": "^4.2.2",
     "pinia": "^3.0.4",
@@ -24,7 +29,9 @@
     "yup": "^1.7.1"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.12.3",
     "autoprefixer": "^10.4.23",
+    "cross-env": "^7.0.3",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18"
   }

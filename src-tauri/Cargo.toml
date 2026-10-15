@@ -1,0 +1,37 @@
+[package]
+name = "kollel-student-kiosk"
+version = "0.1.0"
+description = "KollelSys Student Portal kiosk"
+edition = "2021"
+default-run = "kollel-student-kiosk"
+
+[lib]
+name = "kollel_student_kiosk_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "kollel-student-kiosk"
+path = "src/main.rs"
+
+[[bin]]
+name = "hash-password"
+path = "src/bin/hash_password.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+argon2 = { version = "0.5", features = ["std", "password-hash"] }
+serde_json = "1"
+
+[target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
+tauri-plugin-process = "2"
+tauri-plugin-updater = "2"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

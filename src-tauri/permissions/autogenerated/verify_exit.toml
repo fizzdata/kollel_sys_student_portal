@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-verify-exit"
+description = "Enables the verify_exit command without any pre-configured scope."
+commands.allow = ["verify_exit"]
+
+[[permission]]
+identifier = "deny-verify-exit"
+description = "Denies the verify_exit command without any pre-configured scope."
+commands.deny = ["verify_exit"]

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Exit</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; background: #1e2939; color: #fff;
+         display: flex; flex-direction: column; justify-content: center; height: 100vh; padding: 0 24px; box-sizing: border-box; }
+  input, button { font-size: 16px; padding: 8px 10px; border-radius: 6px; border: 0; width: 100%; box-sizing: border-box; margin-top: 10px; }
+  button { background: #2563eb; color: #fff; cursor: pointer; }
+  #msg { color: #fca5a5; min-height: 1.2em; margin-top: 8px; font-size: 14px; }
+</style>
+</head>
+<body>
+  <label for="pw">Enter password to exit</label>
+  <input id="pw" type="password" autocomplete="off" autofocus>
+  <div id="msg"></div>
+  <button id="ok">Exit application</button>
+<script>
+  const pw = document.getElementById('pw');
+  const msg = document.getElementById('msg');
+  async function submit() {
+    msg.textContent = '';
+    try {
+      await window.__TAURI_INTERNALS__.invoke('verify_exit', { password: pw.value });
+    } catch (e) {
+      const s = String(e);
+      msg.textContent = s.startsWith('locked:')
+        ? 'Too many attempts. Try again in ' + s.slice(7) + 's.'
+        : 'Incorrect password.';
+      pw.value = '';
+      pw.focus();
+    }
+  }
+  document.getElementById('ok').onclick = submit;
+  pw.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+</script>
+</body>
+</html>

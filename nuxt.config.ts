@@ -1,6 +1,11 @@
+// KIOSK_BUILD=1 is set only by the Tauri scripts (kiosk:dev / kiosk:generate).
+// Normal browser dev/build/generate are unaffected.
+const isKiosk = process.env.KIOSK_BUILD === '1'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
+  ssr: !isKiosk,
   devtools: { enabled: true },
   modules: ['@nuxt/ui'],
   css: ['~/assets/css/main.css'],
@@ -40,7 +45,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Expose public environment variables to both client and server
     public: {
-      API_URL: process.env.API_URL || 'https://kollelsys.com/api',
+      API_URL: process.env.API_URL || 'https://api.kollelsys.com/api',
     },
   },
   ui: {

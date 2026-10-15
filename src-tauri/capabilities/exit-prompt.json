@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "exit-prompt",
+  "description": "Only the exit password prompt may call verify_exit. The main window has no capabilities.",
+  "windows": ["exit"],
+  "permissions": ["allow-verify-exit"]
+}
