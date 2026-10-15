@@ -156,6 +156,46 @@ const goToNextPage = async () => {
   if (currentPage.value >= totalPages.value || loading.value) return;
   await fetchTransactions(currentPage.value + 1);
 };
+const printing = ref(false);
+
+// Kiosk: silent print + spooler confirmation. Browser: print dialog + user confirmation.
+const handlePrint = async (pdf) => {
+  printing.value = true;
+  try {
+    for (;;) {
+      if (isTauriApp()) {
+        toast.add({ title: t("Printing check..."), color: "info", duration: 3000 });
+        const r = await printCheckNative(pdf);
+        if (r.outcome === "printed" || r.outcome === "queued") {
+          toast.add({
+            title: t("Success"),
+            description:
+              r.outcome === "printed"
+                ? t("Check was sent to the printer")
+                : t("Check is in the printer queue"),
+            color: "success",
+            duration: 5000,
+          });
+          return;
+        }
+        const reason =
+          r.outcome === "error"
+            ? t("Printing failed. Check that the printer is on and has paper.")
+            : t("Could not confirm the check was sent to the printer.");
+        toast.add({ title: t("Error"), description: reason, color: "error", duration: 8000 });
+        if (!window.confirm(`${reason}\n\n${t("Print again?")}`)) return;
+      } else {
+        $printJS({ printable: pdf, type: "pdf", base64: true });
+        if (window.confirm(t("Did the check print correctly? OK = yes, Cancel = print again"))) {
+          return;
+        }
+      }
+    }
+  } finally {
+    printing.value = false;
+  }
+};
+
 const onSubmit = async (event) => {
   try {
     isSubmitting.value = true;
@@ -172,15 +212,11 @@ const onSubmit = async (event) => {
         duration: 2000,
       });
 
-      $printJS({
-        printable: response.pdf,
-        type: "pdf",
-        base64: true,
-      });
+      generateChecksModal.value = false;
+      handlePrint(response.pdf);
 
       await fetchTransactionSetup();
       await fetchTransactions();
-      generateChecksModal.value = false;
     } else {
       toast.add({
         title: t("Error"),

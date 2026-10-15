@@ -24,6 +24,7 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 argon2 = { version = "0.5", features = ["std", "password-hash"] }
 serde_json = "1"
+base64 = "0.22"
 
 [target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
 tauri-plugin-process = "2"

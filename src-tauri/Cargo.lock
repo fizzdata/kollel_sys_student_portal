@@ -1787,6 +1787,7 @@ name = "kollel-student-kiosk"
 version = "0.1.0"
 dependencies = [
  "argon2",
+ "base64 0.22.1",
  "serde_json",
  "tauri",
  "tauri-build",

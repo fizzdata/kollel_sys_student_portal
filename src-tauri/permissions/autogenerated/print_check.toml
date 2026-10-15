@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-print-check"
+description = "Enables the print_check command without any pre-configured scope."
+commands.allow = ["print_check"]
+
+[[permission]]
+identifier = "deny-print-check"
+description = "Denies the print_check command without any pre-configured scope."
+commands.deny = ["print_check"]

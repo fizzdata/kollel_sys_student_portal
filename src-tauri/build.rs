@@ -16,7 +16,7 @@ fn main() {
     // Only the commands listed here exist as permissions; the capability file
     // grants them to specific windows only.
     tauri_build::try_build(
-        Attributes::new().app_manifest(AppManifest::new().commands(&["verify_exit"])),
+        Attributes::new().app_manifest(AppManifest::new().commands(&["verify_exit", "print_check"])),
     )
     .expect("failed to run tauri-build");
 }

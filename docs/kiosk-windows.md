@@ -36,9 +36,22 @@ Tauri is never involved in these commands.
 - Rust (stable) via rustup
 - Visual Studio Build Tools with "Desktop development with C++"
 - WebView2 Runtime (included in Windows 11; the installer also handles it on Windows 10)
+- SumatraPDF print engine: run `powershell -File scripts\fetch-sumatra.ps1` once (downloads a pinned, checksum-verified copy into `src-tauri\resources\`, which is git-ignored). Required for `tauri dev` and `tauri build`.
 
 If `cargo` fails with `CRYPT_E_NO_REVOCATION_CHECK` on a restricted network, set
 `$env:CARGO_HTTP_CHECK_REVOKE = "false"` for that session.
+
+## Check printing and print confirmation
+
+In the kiosk, generated checks are printed **silently to the Windows default printer** (no print dialog) by the bundled SumatraPDF (GPLv3, run as a separate program). The app then watches the printer's Windows spooler queue and shows one of:
+
+- **Sent to the printer** – the job reached the spooler and finished leaving the queue.
+- **In the printer queue** – the job is queued but not finished (e.g. printer busy).
+- **Failure / not confirmed** – printer error/offline/paper, no default printer, or no spooler job was seen. The user is asked whether to print again (the check is already generated, so the same PDF is reprinted).
+
+"Sent to the printer" means the Windows spooler handed the job to the printer; Windows cannot confirm the paper physically came out. In a normal browser (`npm run dev`) the old print dialog is used, followed by a "Did the check print correctly?" prompt.
+
+Set the intended printer as the Windows **default printer** on every kiosk. Only the main window may call the native `print_check` command.
 
 ## API URL
 

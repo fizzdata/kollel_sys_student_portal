@@ -17,6 +17,7 @@
     "@iconify-json/la": "^1.2.1",
     "@iconify-json/lucide": "^1.2.121",
     "@nuxt/ui": "^4.3.0",
+    "@tauri-apps/api": "^2.12.4",
     "@tauri-apps/plugin-process": "^2.4.0",
     "@tauri-apps/plugin-updater": "^2.14.0",
     "chart.js": "^4.5.1",

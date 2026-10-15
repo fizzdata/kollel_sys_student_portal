@@ -1,3 +1,6 @@
+#[cfg(windows)]
+mod print;
+
 use argon2::password_hash::{PasswordHash, PasswordVerifier};
 use argon2::Argon2;
 use std::sync::Mutex;
@@ -89,7 +92,16 @@ fn show_exit_prompt(app: &tauri::AppHandle) {
 pub fn run() {
     tauri::Builder::default()
         .manage(Mutex::new(AttemptState::default()))
-        .invoke_handler(tauri::generate_handler![verify_exit])
+        .invoke_handler({
+            #[cfg(windows)]
+            {
+                tauri::generate_handler![verify_exit, print::print_check]
+            }
+            #[cfg(not(windows))]
+            {
+                tauri::generate_handler![verify_exit]
+            }
+        })
         .setup(|app| {
             #[cfg(desktop)]
             {

@@ -182,5 +182,12 @@
   "Memo": "מעמא",
   "Enter memo": "לייג אריין די מעמא",
   "Transfer To Student": "טראנספער צו תלמיד",
-  "Student": "תלמיד"
+  "Student": "תלמיד",
+  "Printing check...": "דרוקט טשעק...",
+  "Check was sent to the printer": "דער טשעק איז געשיקט געווארן צום פרינטער",
+  "Check is in the printer queue": "דער טשעק איז אין דער פרינטער ליניע",
+  "Printing failed. Check that the printer is on and has paper.": "דרוקן איז דורכגעפאלן. קוק אז דער פרינטער איז אן און האט פאפיר.",
+  "Could not confirm the check was sent to the printer.": "קען נישט באשטעטיגן אז דער טשעק איז געשיקט געווארן צום פרינטער.",
+  "Print again?": "דרוקן נאכאמאל?",
+  "Did the check print correctly? OK = yes, Cancel = print again": "האט דער טשעק ריכטיג געדרוקט? OK = יא, Cancel = דרוק נאכאמאל"
 }
